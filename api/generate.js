@@ -1,5 +1,4 @@
 export default async function handler(req, res) {
-  // 1. 允许跨域请求（CORS）
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -15,32 +14,34 @@ export default async function handler(req, res) {
 
   try {
     const { destination, days } = req.body;
-
-    // 2. 这里的名字完美对应你刚刚在 Vercel 填的 DEEPSEEK_API_KEY
     const apiKey = process.env.DEEPSEEK_API_KEY; 
 
     if (!apiKey) {
       return res.status(500).json({ error: "服务器未配置 DEEPSEEK_API_KEY" });
     }
 
-    // 3. 构建发给 DeepSeek 的 Prompt
     const prompt = `你是一个专业的旅行规划师。请为前往 ${destination} 进行为期 ${days} 天旅行的用户，制定一份详细的保姆级旅行攻略。
-    请以精简的 JSON 数组格式返回，不要包含任何多余的 Markdown 格式标记（如 \`\`\`json）。
-    每项需包含：day(天数), time(时间段，如上午/下午/晚上), spot(景点名称), description(简短描述/避坑指南)。`;
+    
+    【严格要求】你必须【仅仅】返回一个标准的 JSON 数组，不需要任何包裹。
+    格式示例：
+    [
+      {"day": "第1天", "time": "上午", "spot": "景点A", "description": "避坑指南"},
+      {"day": "第1天", "time": "下午", "spot": "景点B", "description": "游玩建议"}
+    ]
+    不要包含任何 \`\`\`json 这样的 Markdown 标记，不要包含任何前言或后缀解释。`;
 
-    // 4. 请求 DeepSeek 官方接口
-    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+    const response = await fetch('[https://api.deepseek.com/v1/chat/completions](https://api.deepseek.com/v1/chat/completions)', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'deepseek-chat', // 使用 DeepSeek 的标准对话模型
+        model: 'deepseek-chat',
         messages: [
           { role: 'user', content: prompt }
         ],
-        temperature: 0.7
+        temperature: 0.3 // 调低随机性，让 AI 严格遵守 JSON 格式
       })
     });
 
@@ -50,13 +51,29 @@ export default async function handler(req, res) {
     }
 
     const data = await response.json();
-    const resultText = data.choices[0].message.content;
+    let resultText = data.choices[0].message.content.trim();
 
-    // 5. 将 AI 返回的文本解析并吐给前端
-    return res.status(200).json(JSON.parse(resultText));
+    // ======= 核心强力清洗逻辑：防范 AI 不听话带了 Markdown 标签 =======
+    if (resultText.startsWith('```')) {
+      resultText = resultText.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/\s*```$/, '');
+    }
+    resultText = resultText.trim();
+
+    try {
+      // 尝试解析清洗后的 JSON
+      const jsonParsed = JSON.parse(resultText);
+      return res.status(200).json(jsonParsed);
+    } catch (parseError) {
+      // 如果不幸还是夹带了杂质，尝试用正则把最外层 [ ] 内部的内容捞出来
+      const jsonMatch = resultText.match(/\[\s*\{[\s\S]*\}\s*\]/);
+      if (jsonMatch) {
+        return res.status(200).json(JSON.parse(jsonMatch[0]));
+      }
+      throw new Error("AI 返回的格式无法被解析为 JSON 数组。原始返回为: " + resultText);
+    }
 
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: "服务器内部处理错误：" + error.message });
+    return res.status(500).json({ error: "处理错误：" + error.message });
   }
 }
