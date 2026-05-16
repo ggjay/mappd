@@ -184,7 +184,7 @@ function getPrefs() { return [...document.querySelectorAll('.tag.active')].map(t
 function showNotif(msg, isError = false) {
   const n = document.getElementById('notif');
   n.textContent = msg; n.className = 'notif show' + (isError ? ' error' : '');
-  setTimeout(() => n.className = 'notif', 3500);
+  setTimeout(() => n.className = 'notif', 4500);
 }
 
 function setLoadingStep(n) {
@@ -196,15 +196,12 @@ function setLoadingStep(n) {
   }
 }
 
-// 核心开源地图初始化：纯免 Key、免注册、高画质
 function initMap(lat, lng) {
   if (map) { map.remove(); map = null; }
   document.getElementById('map-placeholder').style.display = 'none';
   
-  // 建立开源 Leaflet 实例
   map = L.map('map', { zoomControl: false }).setView([lat, lng], 13);
   
-  // 采用 CartoDB 极简高质感开源地图底图，秒级直连，无任何水印或权限报错
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
     attribution: '© OpenStreetMap © CARTO', 
     maxZoom: 19
@@ -220,7 +217,6 @@ function clearMap() {
 
 function renderDay(day) {
   clearMap();
-  // 统一支持数字天数和字符串天数解析
   const places = currentPlaces.filter(p => {
     const pDay = typeof p.day === 'string' ? parseInt(p.day.replace(/[^0-9]/g, '')) : p.day;
     return pDay === day;
@@ -228,30 +224,32 @@ function renderDay(day) {
   
   if (!places.length) return;
   
-  // 绘制虚线行驶路线轨迹
-  routeLayer = L.polyline(places.map(p => [p.lat, p.lng]), {
+  const validCoords = places.filter(p => !isNaN(parseFloat(p.lat)) && !isNaN(parseFloat(p.lng)));
+  if (!validCoords.length) return;
+  
+  routeLayer = L.polyline(validCoords.map(p => [parseFloat(p.lat), parseFloat(p.lng)]), {
     color: '#2D6A4F', weight: 2.5, opacity: 0.7, dashArray: '6,5'
   }).addTo(map);
   
-  // 动态生成数字气泡标记
-  places.forEach((p, i) => {
+  validCoords.forEach((p, i) => {
     const bg = p.type === 'food' ? '#B5451B' : p.type === 'nature' ? '#2D6A4F' : '#1A1814';
     const icon = L.divIcon({
       className: '',
-      html: `<div style="width:32px;height:32px;border-radius:50%;background:${bg};color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;border:2.5px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.2);font-family:'DM Sans',sans-serif;">${i+1}</div>`,
+      html: `<div style="width:32px;height:32px;border-radius:50%;background:${bg};color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;border:2.5px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.2);">${i+1}</div>`,
       iconSize: [32,32], iconAnchor: [16,16]
     });
-    const m = L.marker([p.lat, p.lng], { icon }).addTo(map);
-    m.bindPopup(`<div style="font-family:'DM Sans',sans-serif;min-width:200px;">
+    const m = L.marker([parseFloat(p.lat), parseFloat(p.lng)], { icon }).addTo(map);
+    m.bindPopup(`<div style="min-width:200px;">
       <div style="font-weight:500;font-size:14px;margin-bottom:4px;">${p.name}</div>
       <div style="font-size:12px;color:#6B6860;margin-bottom:8px;">${p.desc}</div>
-      <div style="font-size:11px;color:#9E9B94;">⏱ 建议游玩: ${p.duration} · ${p.tips}</div>
-      <div style="font-size:10px;color:#9E9B94;margin-top:6px;border-top:1px solid #eee;padding-top:6px;">综合 ${p.sources || 3} 篇攻略提及</div>
+      <div style="font-size:11px;color:#9E9B94;">⏱ 建议: ${p.duration || '1-2小时'} · ${p.tips || ''}</div>
     </div>`, { maxWidth: 260 });
     markers.push(m);
   });
   
-  map.fitBounds(routeLayer.getBounds(), { padding: [60,60] });
+  if (validCoords.length > 0) {
+    map.fitBounds(routeLayer.getBounds(), { padding: [60,60] });
+  }
 }
 
 function renderDaySwitcher(days) {
@@ -271,7 +269,6 @@ function switchDay(day) {
 
 function renderPlaceList(places) {
   const list = document.getElementById('place-list');
-  // 规范解析所有天数
   const days = [...new Set(places.map(p => typeof p.day === 'string' ? parseInt(p.day.replace(/[^0-9]/g, '')) : p.day))].sort((a,b)=>a-b);
   list.innerHTML = '';
   
@@ -302,18 +299,19 @@ function renderPlaceList(places) {
             ${p.type==='food' ? '<span class="cbadge cbadge-orange">美食</span>' : ''}
           </div>
         </div>
-        <div class="card-desc">${p.desc}</div>
+        <div class="card-desc">${p.desc || ''}</div>
         <div class="card-meta">
           <div class="meta-item"><i class="ti ti-clock" style="font-size:12px;"></i>${p.duration || '1-2小时'}</div>
-          <div class="meta-item"><i class="ti ti-users" style="font-size:12px;"></i>${p.sources || 3}篇攻略提及</div>
         </div>
-        <div class="card-sources">📌 ${p.tips || '暂无特备提示'}</div>`;
+        <div class="card-sources">📌 ${p.tips || '暂无特别提示'}</div>`;
       
       card.onclick = () => {
         document.querySelectorAll('.place-card').forEach(c => c.classList.remove('active'));
         card.classList.add('active');
         switchDay(day);
-        if (map) map.setView([p.lat, p.lng], 15);
+        const latVal = parseFloat(p.lat);
+        const lngVal = parseFloat(p.lng);
+        if (map && !isNaN(latVal) && !isNaN(lngVal)) map.setView([latVal, lngVal], 15);
         markers[i] && markers[i].openPopup();
       };
       list.appendChild(card);
@@ -334,12 +332,11 @@ async function startGenerate() {
   overlay.classList.add('active');
   
   setLoadingStep(1);
-  await new Promise(r => setTimeout(r, 400));
+  await new Promise(r => setTimeout(r, 300));
   setLoadingStep(2);
   
   try {
     setLoadingStep(3);
-    // 💥 终极修复点：精准配合后端接收格式，传送 destination 与 days
     const res = await fetch('/api/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -349,24 +346,51 @@ async function startGenerate() {
       })
     });
     
-    if (!res.ok) throw new Error('服务器错误 ' + res.status);
-    const places = await res.json();
+    // 🔍 打印第一步：查看原始返回包状态
+    console.log("服务器响应状态码:", res.status);
+    
+    // 获取响应文本
+    const rawText = await res.text();
+    // 🔍 打印第二步：在控制台无死角还原大模型吐出的所有数据
+    console.log("=== AI原始返回数据（点开看详情） ===");
+    console.log(rawText);
+    console.log("=====================================");
+
+    if (!res.ok) throw new Error(`服务器返回错误: ${res.status}。详情见控制台。`);
+    
+    let places;
+    try {
+      places = JSON.parse(rawText);
+    } catch(parseErr) {
+      console.error("JSON解析失败，尝试备用正则提取...", parseErr);
+      // 备用正则强行捕获 [ ... ]
+      const jsonMatch = rawText.match(/\[\s*\{[\s\S]*\}\s*\]/);
+      if (jsonMatch) {
+        places = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error("返回结果无法被解析为标准的数组列表，请看 F12 控制台日志。");
+      }
+    }
     
     setLoadingStep(4);
     if (!places || !places.length || places.error) {
-      throw new Error(places.error || 'AI 返回数据格式异常，请重试');
+      throw new Error(places.error || 'AI 返回数据格式为空，请重试');
     }
     
     currentPlaces = places;
     overlay.classList.remove('active');
     
-    // 计算地图中心点
-    const centerLat = places.reduce((s,p) => s + parseFloat(p.lat), 0) / places.length;
-    const centerLng = places.reduce((s,p) => s + parseFloat(p.lng), 0) / places.length;
+    // 过滤掉没有合法坐标的点
+    const validPlaces = places.filter(p => !isNaN(parseFloat(p.lat)) && !isNaN(parseFloat(p.lng)));
+    if(!validPlaces.length) {
+      throw new Error("AI 生成了文字攻略，但未能给出有效的地图经纬度坐标。");
+    }
+    
+    const centerLat = validPlaces.reduce((s,p) => s + parseFloat(p.lat), 0) / validPlaces.length;
+    const centerLng = validPlaces.reduce((s,p) => s + parseFloat(p.lng), 0) / validPlaces.length;
     
     initMap(centerLat, centerLng);
     
-    // 规范收集所有天数
     const days = [...new Set(places.map(p => typeof p.day === 'string' ? parseInt(p.day.replace(/[^0-9]/g, '')) : p.day))].sort((a,b)=>a-b);
     selectedDay = 1;
     renderDaySwitcher(days);
@@ -378,7 +402,7 @@ async function startGenerate() {
   } catch(e) {
     overlay.classList.remove('active');
     showNotif('生成失败：' + e.message, true);
-    console.error(e);
+    console.error("捕获的详细错误对象:", e);
   }
   btn.disabled = false; btn.classList.remove('loading');
 }
