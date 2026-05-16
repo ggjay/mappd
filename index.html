@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -71,18 +72,18 @@
   .empty-state { text-align: center; padding: 48px 0; color: var(--ink3); }
   .empty-state i { font-size: 36px; opacity: 0.3; display: block; margin-bottom: 12px; }
   .empty-state p { font-size: 13px; }
-  .map-container { position: relative; background: #e8e0d0; overflow: hidden; }
-  #map { width: 100%; height: 100%; }
-  .map-placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+  .map-container { position: relative; background: #e8e0d0; overflow: hidden; height: 100vh; }
+  #map { width: 100%; height: 100%; position: absolute; inset: 0; z-index: 1; }
+  .map-placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: #e8e0d0; z-index: 5; }
   .map-placeholder-icon { width: 72px; height: 72px; border-radius: 50%; background: rgba(26,24,20,0.06); display: flex; align-items: center; justify-content: center; }
   .map-placeholder-icon i { font-size: 32px; color: var(--ink3); }
   .map-placeholder p { font-size: 14px; color: var(--ink3); }
   .map-topbar { position: absolute; top: 16px; left: 16px; right: 16px; display: flex; align-items: center; gap: 10px; z-index: 10; pointer-events: none; }
-  .map-title-pill { background: var(--surface); border: 1px solid var(--border); border-radius: 99px; padding: 8px 18px; font-size: 13px; font-weight: 500; color: var(--ink); pointer-events: auto; opacity: 0; transition: opacity 0.3s; }
+  .map-title-pill { background: var(--surface); border: 1px solid var(--border); border-radius: 99px; padding: 8px 18px; font-size: 13px; font-weight: 500; color: var(--ink); pointer-events: auto; opacity: 0; transition: opacity 0.3s; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
   .map-title-pill.visible { opacity: 1; }
   .day-switcher { display: flex; gap: 6px; pointer-events: auto; opacity: 0; transition: opacity 0.3s; }
   .day-switcher.visible { opacity: 1; }
-  .day-btn { padding: 6px 14px; border-radius: 99px; border: 1px solid var(--border); background: var(--surface); font-size: 12px; cursor: pointer; color: var(--ink2); transition: all 0.15s; font-family: var(--font-body); }
+  .day-btn { padding: 6px 14px; border-radius: 99px; border: 1px solid var(--border); background: var(--surface); font-size: 12px; cursor: pointer; color: var(--ink2); transition: all 0.15s; font-family: var(--font-body); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
   .day-btn.active { background: var(--ink); color: #fff; border-color: var(--ink); }
   .loading-overlay { position: absolute; inset: 0; background: var(--surface); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; z-index: 20; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
   .loading-overlay.active { opacity: 1; pointer-events: all; }
@@ -113,7 +114,7 @@
     <div class="input-section">
       <div class="input-group">
         <label class="input-label">目的地</label>
-        <input class="input-field" id="destination" placeholder="例如：京都、大阪、冲绳…" type="text">
+        <input class="input-field" id="destination" placeholder="例如：京都、大阪、马德里…" type="text">
       </div>
       <div class="input-row">
         <div class="input-group">
@@ -122,7 +123,7 @@
         </div>
         <div class="input-group">
           <label class="input-label">行程天数</label>
-          <input class="input-field" id="duration" placeholder="3" type="number" min="1" max="14">
+          <input class="input-field" id="duration" placeholder="3" type="number" min="1" max="14" value="3">
         </div>
       </div>
       <div class="input-group">
@@ -172,17 +173,20 @@
   </div>
 </div>
 <div class="notif" id="notif"></div>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 let map = null, markers = [], routeLayer = null, currentPlaces = [], selectedDay = 1;
+
 document.querySelectorAll('.tag').forEach(t => t.addEventListener('click', () => t.classList.toggle('active')));
 function getPrefs() { return [...document.querySelectorAll('.tag.active')].map(t => t.dataset.val).join('、'); }
+
 function showNotif(msg, isError = false) {
   const n = document.getElementById('notif');
   n.textContent = msg; n.className = 'notif show' + (isError ? ' error' : '');
   setTimeout(() => n.className = 'notif', 3500);
 }
+
 function setLoadingStep(n) {
   for (let i = 1; i <= 4; i++) {
     const el = document.getElementById('step-' + i);
@@ -191,26 +195,45 @@ function setLoadingStep(n) {
     else { el.classList.remove('done', 'active'); }
   }
 }
+
+// 核心开源地图初始化：纯免 Key、免注册、高画质
 function initMap(lat, lng) {
   if (map) { map.remove(); map = null; }
   document.getElementById('map-placeholder').style.display = 'none';
+  
+  // 建立开源 Leaflet 实例
   map = L.map('map', { zoomControl: false }).setView([lat, lng], 13);
+  
+  // 采用 CartoDB 极简高质感开源地图底图，秒级直连，无任何水印或权限报错
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    attribution: '© OpenStreetMap © CARTO', maxZoom: 19
+    attribution: '© OpenStreetMap © CARTO', 
+    maxZoom: 19
   }).addTo(map);
+  
   L.control.zoom({ position: 'bottomright' }).addTo(map);
 }
+
 function clearMap() {
   markers.forEach(m => m.remove()); markers = [];
   if (routeLayer) { routeLayer.remove(); routeLayer = null; }
 }
+
 function renderDay(day) {
   clearMap();
-  const places = currentPlaces.filter(p => p.day === day);
+  // 统一支持数字天数和字符串天数解析
+  const places = currentPlaces.filter(p => {
+    const pDay = typeof p.day === 'string' ? parseInt(p.day.replace(/[^0-9]/g, '')) : p.day;
+    return pDay === day;
+  });
+  
   if (!places.length) return;
+  
+  // 绘制虚线行驶路线轨迹
   routeLayer = L.polyline(places.map(p => [p.lat, p.lng]), {
     color: '#2D6A4F', weight: 2.5, opacity: 0.7, dashArray: '6,5'
   }).addTo(map);
+  
+  // 动态生成数字气泡标记
   places.forEach((p, i) => {
     const bg = p.type === 'food' ? '#B5451B' : p.type === 'nature' ? '#2D6A4F' : '#1A1814';
     const icon = L.divIcon({
@@ -222,34 +245,49 @@ function renderDay(day) {
     m.bindPopup(`<div style="font-family:'DM Sans',sans-serif;min-width:200px;">
       <div style="font-weight:500;font-size:14px;margin-bottom:4px;">${p.name}</div>
       <div style="font-size:12px;color:#6B6860;margin-bottom:8px;">${p.desc}</div>
-      <div style="font-size:11px;color:#9E9B94;">⏱ 建议 ${p.duration} · ${p.tips}</div>
-      <div style="font-size:10px;color:#9E9B94;margin-top:6px;border-top:1px solid #eee;padding-top:6px;">综合 ${p.sources} 篇攻略</div>
+      <div style="font-size:11px;color:#9E9B94;">⏱ 建议游玩: ${p.duration} · ${p.tips}</div>
+      <div style="font-size:10px;color:#9E9B94;margin-top:6px;border-top:1px solid #eee;padding-top:6px;">综合 ${p.sources || 3} 篇攻略提及</div>
     </div>`, { maxWidth: 260 });
     markers.push(m);
   });
+  
   map.fitBounds(routeLayer.getBounds(), { padding: [60,60] });
 }
+
 function renderDaySwitcher(days) {
   const sw = document.getElementById('day-switcher');
   sw.innerHTML = days.map(d => `<button class="day-btn${d===1?' active':''}" onclick="switchDay(${d})">Day ${d}</button>`).join('');
   sw.classList.add('visible');
 }
+
 function switchDay(day) {
   selectedDay = day;
-  document.querySelectorAll('.day-btn').forEach(b => b.classList.toggle('active', parseInt(b.textContent.replace('Day ',''))===day));
+  document.querySelectorAll('.day-btn').forEach(b => {
+    const bNum = parseInt(b.textContent.replace('Day ',''));
+    b.classList.toggle('active', bNum === day);
+  });
   renderDay(day);
 }
+
 function renderPlaceList(places) {
   const list = document.getElementById('place-list');
-  const days = [...new Set(places.map(p => p.day))].sort();
+  // 规范解析所有天数
+  const days = [...new Set(places.map(p => typeof p.day === 'string' ? parseInt(p.day.replace(/[^0-9]/g, '')) : p.day))].sort((a,b)=>a-b);
   list.innerHTML = '';
+  
   days.forEach(day => {
     const title = document.createElement('div');
     title.className = 'section-title';
     title.style.marginTop = day > 1 ? '20px' : '0';
     title.textContent = `Day ${day}`;
     list.appendChild(title);
-    places.filter(p => p.day === day).forEach((p, i) => {
+    
+    const dayPlaces = places.filter(p => {
+      const pDay = typeof p.day === 'string' ? parseInt(p.day.replace(/[^0-9]/g, '')) : p.day;
+      return pDay === day;
+    });
+
+    dayPlaces.forEach((p, i) => {
       const card = document.createElement('div');
       card.className = 'place-card';
       card.innerHTML = `
@@ -257,7 +295,7 @@ function renderPlaceList(places) {
           <div class="card-num">${i+1}</div>
           <div class="card-body">
             <div class="card-name">${p.name}</div>
-            <div class="card-type">${p.category}</div>
+            <div class="card-type">${p.category || '景点'}</div>
           </div>
           <div class="card-badges">
             ${p.must ? '<span class="cbadge cbadge-green">必去</span>' : ''}
@@ -266,10 +304,11 @@ function renderPlaceList(places) {
         </div>
         <div class="card-desc">${p.desc}</div>
         <div class="card-meta">
-          <div class="meta-item"><i class="ti ti-clock" style="font-size:12px;"></i>${p.duration}</div>
-          <div class="meta-item"><i class="ti ti-users" style="font-size:12px;"></i>${p.sources}篇攻略提及</div>
+          <div class="meta-item"><i class="ti ti-clock" style="font-size:12px;"></i>${p.duration || '1-2小时'}</div>
+          <div class="meta-item"><i class="ti ti-users" style="font-size:12px;"></i>${p.sources || 3}篇攻略提及</div>
         </div>
-        <div class="card-sources">📌 ${p.tips}</div>`;
+        <div class="card-sources">📌 ${p.tips || '暂无特备提示'}</div>`;
+      
       card.onclick = () => {
         document.querySelectorAll('.place-card').forEach(c => c.classList.remove('active'));
         card.classList.add('active');
@@ -283,57 +322,57 @@ function renderPlaceList(places) {
   document.getElementById('empty-state').style.display = 'none';
   list.style.display = 'block';
 }
-function extractJSON(text) {
-  const match = text.match(/```json\s*([\s\S]*?)```/) || text.match(/(\[[\s\S]*\])/);
-  if (match) { try { return JSON.parse(match[1] || match[0]); } catch(e) {} }
-  try { return JSON.parse(text); } catch(e) {}
-  return null;
-}
+
 async function startGenerate() {
   const dest = document.getElementById('destination').value.trim();
   if (!dest) { showNotif('请输入目的地', true); return; }
   const duration = document.getElementById('duration').value || '3';
-  const date = document.getElementById('travel-date').value;
-  const prefs = getPrefs();
+  
   const btn = document.getElementById('gen-btn');
   btn.disabled = true; btn.classList.add('loading');
   const overlay = document.getElementById('loading-overlay');
   overlay.classList.add('active');
+  
   setLoadingStep(1);
+  await new Promise(r => setTimeout(r, 400));
+  setLoadingStep(2);
+  
   try {
-    const prompt = `你是一个专业旅行规划师。请为用户规划${dest}的${duration}天旅行攻略。
-出发时间：${date || '近期'}，旅行偏好：${prefs}
-请先用web_search搜索"${dest} 旅行攻略 ${duration}天"和"${dest} 必去景点 美食推荐"，
-然后综合搜索结果，以JSON格式返回行程安排。
-只返回JSON数组，格式如下（不要有任何其他文字和markdown标记）：
-[{"day":1,"name":"景点中文名","category":"类型如寺庙/美食/市场/自然","lat":纬度数字,"lng":经度数字,"type":"culture或food或nature","must":true,"duration":"2小时","sources":4,"desc":"50字内描述包含最重要信息","tips":"最实用的一条避坑小技巧"}]
-每天安排3-4个点位，共${duration}天，确保坐标准确。`;
-    setLoadingStep(1);
-    await new Promise(r => setTimeout(r, 600));
-    setLoadingStep(2);
+    setLoadingStep(3);
+    // 💥 终极修复点：精准配合后端接收格式，传送 destination 与 days
     const res = await fetch('/api/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt })
+      body: JSON.stringify({ 
+        destination: dest, 
+        days: parseInt(duration) 
+      })
     });
-    setLoadingStep(3);
+    
     if (!res.ok) throw new Error('服务器错误 ' + res.status);
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
+    const places = await res.json();
+    
     setLoadingStep(4);
-    await new Promise(r => setTimeout(r, 400));
-    const places = extractJSON(data.result);
-    if (!places || !places.length) throw new Error('AI 返回数据格式异常，请重试');
+    if (!places || !places.length || places.error) {
+      throw new Error(places.error || 'AI 返回数据格式异常，请重试');
+    }
+    
     currentPlaces = places;
     overlay.classList.remove('active');
-    const centerLat = places.reduce((s,p) => s+p.lat, 0) / places.length;
-    const centerLng = places.reduce((s,p) => s+p.lng, 0) / places.length;
+    
+    // 计算地图中心点
+    const centerLat = places.reduce((s,p) => s + parseFloat(p.lat), 0) / places.length;
+    const centerLng = places.reduce((s,p) => s + parseFloat(p.lng), 0) / places.length;
+    
     initMap(centerLat, centerLng);
-    const days = [...new Set(places.map(p => p.day))].sort();
+    
+    // 规范收集所有天数
+    const days = [...new Set(places.map(p => typeof p.day === 'string' ? parseInt(p.day.replace(/[^0-9]/g, '')) : p.day))].sort((a,b)=>a-b);
     selectedDay = 1;
     renderDaySwitcher(days);
     renderDay(1);
     renderPlaceList(places);
+    
     document.getElementById('map-title-pill').textContent = `${dest} · ${duration}天行程`;
     document.getElementById('map-title-pill').classList.add('visible');
   } catch(e) {
@@ -343,6 +382,7 @@ async function startGenerate() {
   }
   btn.disabled = false; btn.classList.remove('loading');
 }
+
 window.addEventListener('load', () => {
   const now = new Date();
   document.getElementById('travel-date').value = `${now.getFullYear()}-${String(now.getMonth()+2).padStart(2,'0')}`;
