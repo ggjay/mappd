@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mappd — 旅行规划智能体</title>
+<title>Mappd — 大路线智能沙盘决策器</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
@@ -35,7 +35,7 @@
   .input-field:focus { border-color: var(--accent); }
   .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   
-  .gen-btn { width: 100%; padding: 13px; background: var(--ink); color: var(--surface); border: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 4px; margin-bottom: 16px; }
+  .gen-btn { width: 100%; padding: 13px; background: var(--ink); color: var(--surface); border: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 4px; margin-bottom: 16px; position: relative; }
   .gen-btn:disabled { background: var(--ink3); cursor: not-allowed; }
   .gen-btn .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
   .gen-btn.loading .spinner { display: block; }
@@ -47,7 +47,6 @@
   .results-scroll::-webkit-scrollbar { width: 4px; }
   .results-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
   
-  /* 📊 大方向账本主卡片 */
   .option-card { background: var(--bg); border: 2px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 20px; cursor: pointer; transition: all 0.25s ease; }
   .option-card:hover { border-color: rgba(45,106,79,0.4); }
   .option-card.active { border-color: var(--accent); background: #fff; box-shadow: 0 6px 24px rgba(45,106,79,0.06); }
@@ -65,15 +64,14 @@
   .fin-val { font-size: 19px; font-weight: 700; color: var(--accent2); }
   .option-card.active .fin-val { color: var(--accent); }
   
-  /* 💥 时序沙盘时间流垂直线样式 */
+  .detail-title { font-size: 12px; font-weight: 600; color: var(--ink); text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
   .timeline-container { position: relative; padding-left: 18px; border-left: 2px solid var(--border); margin-top: 14px; }
   .timeline-node { position: relative; margin-bottom: 20px; padding: 12px; background: var(--bg); border: 1px solid var(--border2); border-radius: 8px; transition: all 0.2s ease; }
   .option-card.active .timeline-node { background: #FDFBF7; }
-  .timeline-node:hover { border-color: var(--ink); transform: translateX(2px); box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
+  .timeline-node:hover { border-color: var(--ink); transform: translateX(2px); }
   
-  /* 时间轴上的标志小圆圈 */
-  .node-dot { position: absolute; left: -25px; top: 16px; width: 12px; height: 12px; border-radius: 50%; background: var(--surface2); border: 2px solid var(--ink3); transition: all 0.2s; }
-  .timeline-node:hover .node-dot { background: var(--ink); border-color: var(--ink); scale: 1.2; }
+  .node-dot { position: absolute; left: -25px; top: 16px; width: 12px; height: 12px; border-radius: 50%; background: var(--surface2); border: 2px solid var(--ink3); }
+  .timeline-node:hover .node-dot { background: var(--ink); border-color: var(--ink); }
   .node-flow-flight .node-dot { border-color: var(--accent2); }
   .node-flow-drive .node-dot { border-color: var(--accent); }
   
@@ -85,12 +83,13 @@
   .node-title { font-size: 13px; font-weight: 600; color: var(--ink); }
   .node-detail { font-size: 13px; font-weight: 500; margin: 4px 0; color: #1a1814; }
   .node-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; background: rgba(0,0,0,0.02); padding: 6px; border-radius: 4px; font-size: 11px; color: var(--ink2); margin-top: 4px; }
+  .detail-section { margin-bottom: 16px; background: rgba(26,24,20,0.01); padding: 12px; border-radius: 8px; border: 1px solid var(--border2); }
+  .option-card.active .detail-section { background: #FDFBF7; }
   
   .detail-row { font-size: 12px; display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed var(--border2); color: var(--ink2); }
   .lock-btn { width: 100%; padding: 12px; background: var(--ink); color: #fff; border: none; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; margin-top: 14px; cursor: pointer; display: none; text-align: center; }
   .option-card.active .lock-btn { display: block; }
-  .lock-btn:hover { background: #2d2b27; }
-
+  
   .empty-state { text-align: center; padding: 60px 0; color: var(--ink3); }
   .empty-state i { font-size: 40px; opacity: 0.3; display: block; margin-bottom: 12px; }
   
@@ -103,19 +102,17 @@
   .placeholder-center-core { width: 50px; height: 50px; background: var(--ink); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px; }
   @keyframes slow-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   
-  /* 💥 SVG 流动天线核心 CSS 滚动提速类 */
   @keyframes ant-flow { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
   .animated-flow-line { animation: ant-flow 12s linear infinite !important; }
   .animated-flow-line.highlight-active { stroke-width: 5.5 !important; opacity: 1 !important; animation-duration: 4s !important; }
-
-  /* 💥 极其干净轻量的别针大节点，不抢占视觉中心 */
   .macro-clean-circle { background: #1A1814; color: #fff; border: 2px solid #fff; border-radius: 50%; width: 16px !important; height: 16px !important; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-
+  
   .loading-overlay { position: absolute; inset: 0; background: var(--surface); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
   .loading-overlay.active { opacity: 1; pointer-events: all; }
   .loading-title { font-size: 22px; font-weight: 500; color: var(--ink); }
-  .notif { position: fixed; bottom: 24px; right: 24px; background: var(--ink); color: var(--surface); padding: 12px 20px; border-radius: var(--radius-sm); font-size: 13px; z-index: 200; transform: translateY(20px); opacity: 0; }
+  .notif { position: fixed; bottom: 24px; right: 24px; background: var(--ink); color: var(--surface); padding: 12px 20px; border-radius: var(--radius-sm); font-size: 13px; z-index: 200; transform: translateY(20px); opacity: 0; transition: all 0.3s; }
   .notif.show { transform: translateY(0); opacity: 1; }
+  .notif.error { background: #B5451B; }
 </style>
 </head>
 <body>
@@ -182,7 +179,6 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 let map = null, macroMarkers = [], polylineLayers = {}, globalOptions = [];
-
 const mapArea = document.getElementById('right-map-area');
 const canvas = document.getElementById('sandbox-canvas');
 
@@ -195,9 +191,10 @@ function buildCanvasLines() {
 }
 window.addEventListener('resize', buildCanvasLines); buildCanvasLines();
 
-function showNotif(msg) {
-  const n = document.getElementById('notif'); n.textContent = msg; n.className = 'notif show';
-  setTimeout(() => n.className = 'notif', 4000);
+function showNotif(msg, isError = false) {
+  const n = document.getElementById('notif'); n.textContent = msg; 
+  n.className = 'notif show' + (isError ? ' error' : '');
+  setTimeout(() => n.className = 'notif', 5000);
 }
 
 function initMacroMap(lat, lng, zoom) {
@@ -212,7 +209,6 @@ function clearMacroLayers() {
   Object.values(polylineLayers).forEach(l => l.remove()); polylineLayers = {};
 }
 
-// 💥 纯净流线制图法：不带杂乱大字，只留动态呼吸流线
 function drawMacroRoute(routeData, optionId) {
   clearMacroLayers();
   const centerLat = routeData.center_lat || 39.5;
@@ -232,7 +228,6 @@ function drawMacroRoute(routeData, optionId) {
         color: lineColor, weight: 3.5, opacity: 0.7, dashArray: lineDash, className: 'animated-flow-line' 
       }).addTo(map);
       
-      // 用前瞻 id 建立时空映射绑定
       const flowId = `opt-${optionId}-flow-${sIdx}`;
       polylineLayers[flowId] = poly;
     });
@@ -250,16 +245,12 @@ function drawMacroRoute(routeData, optionId) {
   }
 }
 
-// 💥 高级联动交互：鼠标滑过左侧天数时间流，右侧特定地图流线加速闪烁！
 function highlightMapSegment(optionId, flowIndex, active) {
   const targetId = `opt-${optionId}-flow-${flowIndex}`;
   const layer = polylineLayers[targetId];
-  if (!layer) return;
-  if (active) {
-    layer.getElement().classList.add('highlight-active');
-  } else {
-    layer.getElement().classList.remove('highlight-active');
-  }
+  if (!layer || !layer.getElement()) return;
+  if (active) { layer.getElement().classList.add('highlight-active'); } 
+  else { layer.getElement().classList.remove('highlight-active'); }
 }
 
 async function generateOptions() {
@@ -268,28 +259,37 @@ async function generateOptions() {
   const days = document.getElementById('duration').value;
   const travelers = document.getElementById('travelers').value;
 
-  const btn = document.getElementById('gen-btn'); btn.disabled = true; btn.classList.add('loading');
+  const btn = document.getElementById('gen-btn'); 
+  btn.disabled = true; btn.classList.add('loading');
   document.getElementById('loading-overlay').className = 'loading-overlay active';
 
   try {
     const res = await fetch('/api/plan_options/', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ start_point, destination, days, travelers })
     });
+
+    // 💥 增加核心安全锁：非 200 状态立刻熔断弹出错误信息，杜绝死等
+    if (!res.ok) {
+      throw new Error(`服务器响应失败（状态码: ${res.status}）。可能原因：大模型组织长文本超时超过 Vercel 10秒限制。`);
+    }
+
     const data = await res.json();
     globalOptions = data.options;
     renderOptionCards(data.options);
     document.getElementById('empty-state').style.display = 'none';
-    document.getElementById('loading-overlay').className = 'loading-overlay';
     selectCard(0);
   } catch (e) {
+    showNotif(e.message, true);
+    console.error(e);
+  } finally {
+    // 💥 无论成功失败，铁定释放灰色的 loading 按钮和遮罩层
     document.getElementById('loading-overlay').className = 'loading-overlay';
-    showNotif('精算中断：数据格式不匹配');
+    btn.disabled = false; btn.classList.remove('loading');
   }
-  btn.disabled = false; btn.classList.remove('loading');
 }
 
-// 💥 深度清洗排版：将大模型反馈的 timeline_flows 完全按照全生命周期垂直时间轴平铺
 function renderOptionCards(options) {
   const list = document.getElementById('options-list'); list.innerHTML = '';
 
@@ -297,7 +297,6 @@ function renderOptionCards(options) {
     const card = document.createElement('div');
     card.className = `option-card ${idx === 0 ? 'active' : ''}`; card.id = `opt-card-${idx}`;
     
-    // 垂直流沙盘骨架组装
     let timelineHtml = opt.timeline_flows.map((flow, fIdx) => {
       let isDrive = flow.type === 'drive';
       let metaHtml = isDrive ? `
@@ -313,7 +312,6 @@ function renderOptionCards(options) {
         </div>
       `;
 
-      // 映射到地图高亮：如果是 Day 2-4 的自驾，对应到欧洲地图内部的第0段连线
       const mapLineMap = isDrive ? 0 : (fIdx > 1 ? 1 : -1);
 
       return `
@@ -330,7 +328,7 @@ function renderOptionCards(options) {
             <span style="color:var(--accent2); font-weight:500;">${flow.time_window}</span> &nbsp;|&nbsp; <span>${flow.duration_desc}</span>
           </div>
           ${metaHtml}
-          <div style="font-size:11px; color:#856404; background:#FFFFA6; padding:4px 6px; border-radius:4px; margin-top:5px; line-height:1.3;">
+          <div style="font-size:11px; color:#856404; background:#FFF9E6; padding:4px 6px; border-radius:4px; margin-top:5px; line-height:1.3;">
             💡 <b>时序提醒:</b> ${flow.note}
           </div>
         </div>
@@ -347,11 +345,10 @@ function renderOptionCards(options) {
         <div class="fin-item"><div class="fin-label">全员人均</div><div class="fin-val">${opt.cost_per_person}</div></div>
       </div>
       
-      <div class="detail-title"><i class="ti ti-git-commit"></i> 全生命周期时序流水账沙盘（支持鼠标划过联动）</div>
+      <div class="detail-title" style="margin-top:14px;"><i class="ti ti-git-commit"></i> 全生命周期时序流水账沙盘</div>
       <div class="timeline-container">${timelineHtml}</div>
-
       <div class="detail-section" style="margin-top:14px;"><div class="detail-title"><i class="ti ti-bed"></i> 长途间夜总额分摊</div>${hotelHtml}</div>
-      <button class="lock-btn" onclick="lockThisOption(${opt.option_id}, event)">锁定此方向，开始微观细分景点 🚀</button>
+      <button class="lock-btn" onclick="lockThisOption(${opt.option_id}, event)">确定此方向，开始微观细分景点 🚀</button>
     `;
 
     card.addEventListener('click', (e) => {
@@ -364,6 +361,7 @@ function renderOptionCards(options) {
 
 function selectCard(idx) {
   document.querySelectorAll('.option-card').forEach(c => c.classList.remove('active'));
+  if(!document.getElementById(`opt-card-${idx}`)) return;
   document.getElementById(`opt-card-${idx}`).classList.add('active');
   if(globalOptions[idx] && globalOptions[idx].macro_route) {
     drawMacroRoute(globalOptions[idx].macro_route, globalOptions[idx].option_id);
@@ -371,7 +369,7 @@ function selectCard(idx) {
 }
 
 function lockThisOption(optionId, event) {
-  event.stopPropagation(); alert(`大路线时序已完美锁定！第一阶段决策正式闭环通关！`);
+  event.stopPropagation(); alert(`大路线时序已完美锁定！`);
 }
 </script>
 </body>
