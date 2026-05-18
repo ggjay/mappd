@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mappd — 大路线智能沙盘决策器</title>
+<title>Mappd — 大路线时序智能沙盘</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
@@ -184,6 +184,7 @@ const canvas = document.getElementById('sandbox-canvas');
 
 function buildCanvasLines() {
   let width = mapArea.clientWidth; let height = mapArea.clientHeight;
+  if(!width || !height) return;
   canvas.setAttribute('viewBox', `0 0 ${width} ${height}`);
   let html = '';
   for(let i=0; i<width; i+=90){ html += `<line x1="${i}" y1="0" x2="${width - i}" y2="${height}" stroke="#1A1814" stroke-width="0.5" stroke-dasharray="4,8"/>`; }
@@ -192,25 +193,27 @@ function buildCanvasLines() {
 window.addEventListener('resize', buildCanvasLines); buildCanvasLines();
 
 function showNotif(msg, isError = false) {
-  const n = document.getElementById('notif'); n.textContent = msg; 
+  const n = document.getElementById('notif'); if(!n) return;
+  n.textContent = msg; 
   n.className = 'notif show' + (isError ? ' error' : '');
   setTimeout(() => n.className = 'notif', 5000);
 }
 
 function initMacroMap(lat, lng, zoom) {
   if (map) { map.remove(); map = null; }
-  document.getElementById('map-placeholder').style.display = 'none';
+  const holder = document.getElementById('map-placeholder'); if(holder) holder.style.display = 'none';
   map = L.map('map', { zoomControl: false, attributionControl: false }).setView([lat, lng], zoom);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 12 }).addTo(map);
 }
 
 function clearMacroLayers() {
-  macroMarkers.forEach(m => m.remove()); macroMarkers = [];
-  Object.values(polylineLayers).forEach(l => l.remove()); polylineLayers = {};
+  macroMarkers.forEach(m => m?.remove()); macroMarkers = [];
+  Object.values(polylineLayers).forEach(l => l?.remove()); polylineLayers = {};
 }
 
 function drawMacroRoute(routeData, optionId) {
   clearMacroLayers();
+  if(!routeData) return;
   const centerLat = routeData.center_lat || 39.5;
   const centerLng = routeData.center_lng || -8.0;
   const zoomLevel = routeData.zoom_level || 5;
@@ -218,8 +221,10 @@ function drawMacroRoute(routeData, optionId) {
   if (!map) { initMacroMap(centerLat, centerLng, zoomLevel); } 
   else { map.setView([centerLat, centerLng], zoomLevel); }
 
+  // 💥 修复指针越界：通过唯一的、在 timeline_flows 内部和 segments 对齐的纯文本标号来完成高亮匹配
   if (routeData.segments && routeData.segments.length) {
     routeData.segments.forEach((seg, sIdx) => {
+      if(!seg || !seg.coords) return;
       const isDrive = seg.mode === 'drive';
       const lineColor = isDrive ? '#2D6A4F' : '#B5451B';
       const lineDash = isDrive ? '12, 10' : '4, 12';
@@ -228,13 +233,14 @@ function drawMacroRoute(routeData, optionId) {
         color: lineColor, weight: 3.5, opacity: 0.7, dashArray: lineDash, className: 'animated-flow-line' 
       }).addTo(map);
       
-      const flowId = `opt-${optionId}-flow-${sIdx}`;
+      const flowId = `opt-${optionId}-seg-${sIdx}`;
       polylineLayers[flowId] = poly;
     });
   }
 
   if (routeData.anchors && routeData.anchors.length) {
     routeData.anchors.forEach((anchor, idx) => {
+      if(!anchor) return;
       const cleanIcon = L.divIcon({ className: 'macro-clean-circle', html: `${idx + 1}`, iconSize: [16, 16], iconAnchor: [8, 8] });
       const m = L.marker([anchor.lat, anchor.lng], { icon: cleanIcon }).addTo(map);
       m.bindTooltip(`<div style="font-weight:600; font-size:12px; padding:1px 3px;">${idx+1}. ${anchor.name}</div>`, {
@@ -245,12 +251,15 @@ function drawMacroRoute(routeData, optionId) {
   }
 }
 
-function highlightMapSegment(optionId, flowIndex, active) {
-  const targetId = `opt-${optionId}-flow-${flowIndex}`;
+function highlightMapSegment(optionId, segIndex, active) {
+  if(segIndex < 0) return;
+  const targetId = `opt-${optionId}-seg-${segIndex}`;
   const layer = polylineLayers[targetId];
-  if (!layer || !layer.getElement()) return;
-  if (active) { layer.getElement().classList.add('highlight-active'); } 
-  else { layer.getElement().classList.remove('highlight-active'); }
+  if (!layer) return;
+  const el = layer.getElement();
+  if (!el) return;
+  if (active) { el.classList.add('highlight-active'); } 
+  else { el.classList.remove('highlight-active'); }
 }
 
 async function generateOptions() {
@@ -260,8 +269,9 @@ async function generateOptions() {
   const travelers = document.getElementById('travelers').value;
 
   const btn = document.getElementById('gen-btn'); 
-  btn.disabled = true; btn.classList.add('loading');
-  document.getElementById('loading-overlay').className = 'loading-overlay active';
+  if(btn) { btn.disabled = true; btn.classList.add('loading'); }
+  const overlay = document.getElementById('loading-overlay');
+  if(overlay) overlay.className = 'loading-overlay active';
 
   try {
     const res = await fetch('/api/plan_options', {
@@ -270,46 +280,32 @@ async function generateOptions() {
       body: JSON.stringify({ start_point, destination, days, travelers })
     });
 
-    // 💥 容错第一步：改用 .text() 抓取原始内容，方便彻底拦截错误
-    const rawText = await res.text();
-    console.log("=== 接口返回的原始数据 ===", rawText);
-
     if (!res.ok) {
-      throw new Error(`服务器报错 (${res.status}): ${rawText}`);
+      throw new Error(`服务器返回错误状态码: ${res.status}`);
     }
 
-    // 💥 容错第二步：智能正则清洗大模型吐出的前缀后缀
-    let cleanedText = rawText.trim();
-    if (cleanedText.includes('```')) {
-      const match = cleanedText.match(/```json\s*([\s\S]*?)```/) || cleanedText.match(/```\s*([\s\S]*?)```/);
-      if (match) cleanedText = match[1];
-    }
-    cleanedText = cleanedText.trim();
-
-    let data;
-    try {
-      data = JSON.parse(cleanedText);
-    } catch (parseErr) {
-      // 💥 终极抓脏：如果真解析失败，直接把后台吐出来的不合格文本用 alert 甩在网页上
-      alert("⚠️ JSON 解析失败！大模型返回了非标准格式。下面是它吐出来的原话，拿这个去抽它：\n\n" + cleanedText);
-      throw new Error("数据格式混乱，已在弹窗抓获原话。");
+    const data = await res.json();
+    if (!data || !data.options) {
+      throw new Error("大模型交卷格式无法被正常结构化解析");
     }
 
     globalOptions = data.options;
     renderOptionCards(data.options);
-    document.getElementById('empty-state').style.display = 'none';
+    const est = document.getElementById('empty-state'); if(est) est.style.display = 'none';
     selectCard(0);
   } catch (e) {
     showNotif(e.message, true);
     console.error(e);
   } finally {
-    document.getElementById('loading-overlay').className = 'loading-overlay';
-    btn.disabled = false; btn.classList.remove('loading');
+    // 💥 终极硬保护：无论发生什么，一定会隐藏遮罩层，释放按钮，终结无限旋转
+    if(overlay) overlay.className = 'loading-overlay';
+    if(btn) { btn.disabled = false; btn.classList.remove('loading'); }
   }
 }
 
 function renderOptionCards(options) {
-  const list = document.getElementById('options-list'); list.innerHTML = '';
+  const list = document.getElementById('options-list'); if(!list) return;
+  list.innerHTML = '';
 
   options.forEach((opt, idx) => {
     const card = document.createElement('div');
@@ -319,41 +315,44 @@ function renderOptionCards(options) {
       let isDrive = flow.type === 'drive';
       let metaHtml = isDrive ? `
         <div class="node-meta-grid">
-          <div>🔑 <b>取车:</b> ${flow.meta_json.pickup}</div>
-          <div>🏁 <b>还车:</b> ${flow.meta_json.dropoff}</div>
-          <div>📏 <b>里程:</b> ${flow.meta_json.distance}</div>
-          <div style="color:var(--accent); font-weight:600;">⏱️ <b>纯驾车:</b> ${flow.meta_json.drive_hours}</div>
+          <div>🔑 <b>取车:</b> ${flow.meta_json?.pickup || '机场门店'}</div>
+          <div>🏁 <b>还车:</b> ${flow.meta_json?.dropoff || '机场门店'}</div>
+          <div>📏 <b>里程:</b> ${flow.meta_json?.distance || '计算中'}</div>
+          <div style="color:var(--accent); font-weight:600;">⏱️ <b>纯驾车:</b> ${flow.meta_json?.drive_hours || '计算中'}</div>
         </div>
       ` : `
         <div class="node-meta-grid" style="grid-template-columns:1fr;">
-          <div>💰 <b>预算分摊:</b> ${flow.cost_info}</div>
+          <div>💰 <b>预算分摊:</b> ${flow.cost_info || '参考套票'}</div>
         </div>
       `;
 
-      const mapLineMap = isDrive ? 0 : (fIdx > 1 ? 1 : -1);
+      // 💥 完美防崩：如果线段索引映射不上，降级为-1静默处理，确保天数垂直轴顺利展示
+      let targetSegIndex = -1;
+      if (isDrive) { targetSegIndex = 0; } 
+      else if (fIdx > 1) { targetSegIndex = 1; }
 
       return `
         <div class="timeline-node node-flow-${flow.type}" 
-             onmouseenter="highlightMapSegment(${opt.option_id}, ${mapLineMap}, true)"
-             onmouseleave="highlightMapSegment(${opt.option_id}, ${mapLineMap}, false)">
+             onmouseenter="highlightMapSegment(${opt.option_id}, ${targetSegIndex}, true)"
+             onmouseleave="highlightMapSegment(${opt.option_id}, ${targetSegIndex}, false)">
           <div class="node-dot"></div>
           <div class="node-header">
-            <span class="node-title">${flow.title}</span>
-            <span class="node-days">${flow.days_range}</span>
+            <span class="node-title">${flow.title || '行程节点'}</span>
+            <span class="node-days">${flow.days_range || ''}</span>
           </div>
-          <div class="node-detail">${flow.detail_title}</div>
+          <div class="node-detail">${flow.detail_title || ''}</div>
           <div class="node-sub">
-            <span style="color:var(--accent2); font-weight:500;">${flow.time_window}</span> &nbsp;|&nbsp; <span>${flow.duration_desc}</span>
+            <span style="color:var(--accent2); font-weight:500;">${flow.time_window || ''}</span> &nbsp;|&nbsp; <span>${flow.duration_desc || ''}</span>
           </div>
           ${metaHtml}
           <div style="font-size:11px; color:#856404; background:#FFF9E6; padding:4px 6px; border-radius:4px; margin-top:5px; line-height:1.3;">
-            💡 <b>时序提醒:</b> ${flow.note}
+            💡 <b>时序提醒:</b> ${flow.note || ''}
           </div>
         </div>
       `;
     }).join('');
 
-    let hotelHtml = opt.accommodation_summary.map(h => `<div class="detail-row"><span>🏨 ${h.city} (宿 ${h.nights} 晚)</span><span>均价:${h.avg_price} / 小计:${h.total}</span></div>`).join('');
+    let hotelHtml = opt.accommodation_summary ? opt.accommodation_summary.map(h => `<div class="detail-row"><span>🏨 ${h.city} (宿 ${h.nights} 晚)</span><span>均价:${h.avg_price} / 小计:${h.total}</span></div>`).join('') : '';
 
     card.innerHTML = `
       <div class="opt-header"><div class="opt-name">${opt.option_name}</div><div class="opt-badge">方案 ${idx + 1}</div></div>
@@ -379,8 +378,9 @@ function renderOptionCards(options) {
 
 function selectCard(idx) {
   document.querySelectorAll('.option-card').forEach(c => c.classList.remove('active'));
-  if(!document.getElementById(`opt-card-${idx}`)) return;
-  document.getElementById(`opt-card-${idx}`).classList.add('active');
+  const targetCard = document.getElementById(`opt-card-${idx}`);
+  if(!targetCard) return;
+  targetCard.classList.add('active');
   if(globalOptions[idx] && globalOptions[idx].macro_route) {
     drawMacroRoute(globalOptions[idx].macro_route, globalOptions[idx].option_id);
   }
