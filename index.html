@@ -86,7 +86,6 @@
   
   .map-title-pill { position: absolute; top: 16px; left: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 99px; padding: 8px 18px; font-size: 13px; font-weight: 500; color: var(--ink); z-index: 10; box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: none; }
   
-  /* 💥 新增功能：地图航线中央时间浮层样式 */
   .line-label-popup { background: #fff; border: 1.5px solid var(--ink); padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; box-shadow: 0 2px 6px rgba(0,0,0,0.1); white-space: nowrap; }
   
   .loading-overlay { position: absolute; inset: 0; background: var(--surface); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; z-index: 20; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
@@ -185,11 +184,10 @@ function clearMacroLayers() {
   macroLayers.forEach(l => l.remove()); macroLayers = [];
 }
 
-// 💥 核心功能升级：分段、分颜色绘制欧洲境内每日真实的航线与自驾轨迹
 function drawMacroRoute(routeData) {
   clearMacroLayers();
   
-  // 建立/重定位纯欧洲中心视角，彻底甩掉“成都”的长线干扰
+  // 核心视觉修正：默认将视角完美锁死在欧洲核心西葡海岛区，彻底屏蔽成都干扰
   const centerLat = routeData.europe_center ? routeData.europe_center[0] : (routeData.center_lat || 39.5);
   const centerLng = routeData.europe_center ? routeData.europe_center[1] : (routeData.center_lng || -8.0);
   const zoomLevel = routeData.zoom_level || 5;
@@ -200,10 +198,9 @@ function drawMacroRoute(routeData) {
     map.setView([centerLat, centerLng], zoomLevel);
   }
 
-  // 1. 循环绘制每一段有血有肉的轨迹
+  // 1. 绘制分段多轨迹线
   if (routeData.segments && routeData.segments.length) {
     routeData.segments.forEach(seg => {
-      // 自驾为森林绿虚线，飞行为火山橙虚线
       const isDrive = seg.mode === 'drive';
       const lineColor = isDrive ? '#2D6A4F' : '#B5451B';
       const lineDash = isDrive ? '6, 6' : '3, 8';
@@ -214,7 +211,7 @@ function drawMacroRoute(routeData) {
       }).addTo(map);
       macroLayers.push(poly);
 
-      // 计算线段的正中心几何位置，安放天数浮动小标签
+      // 计算中心点悬浮时间小气泡
       if(seg.coords.length >= 2) {
         const midLat = (seg.coords[0][0] + seg.coords[1][0]) / 2;
         const midLng = (seg.coords[0][1] + seg.coords[1][1]) / 2;
@@ -232,7 +229,7 @@ function drawMacroRoute(routeData) {
     });
   }
 
-  // 2. 打上枢纽城市大锚点
+  // 2. 标出枢纽大城市别针
   if (routeData.anchors && routeData.anchors.length) {
     routeData.anchors.forEach(anchor => {
       const icon = L.divIcon({
@@ -272,4 +269,85 @@ async function generateOptions() {
     globalOptions = data.options;
     renderOptionCards(data.options);
     
-    document.getElementById('empty-state').style.
+    document.getElementById('empty-state').style.display = 'none';
+    document.getElementById('loading-overlay').classList.remove('active');
+    selectCard(0);
+
+  } catch (e) {
+    document.getElementById('loading-overlay').classList.remove('active');
+    showNotif('测算中断：' + e.message);
+    console.error(e);
+  }
+  btn.disabled = false; btn.classList.remove('loading');
+}
+
+function renderOptionCards(options) {
+  const list = document.getElementById('options-list');
+  list.innerHTML = '';
+
+  options.forEach((opt, idx) => {
+    const card = document.createElement('div');
+    card.className = `option-card ${idx === 0 ? 'active' : ''}`;
+    card.id = `opt-card-${idx}`;
+    
+    let flightHtml = opt.flights.map(f => `
+      <div class="detail-row"><span>✈️ ${f.segment} (${f.route})</span><span>人均:${f.cost_per_person}</span></div>
+    `).join('');
+
+    let carHtml = opt.car_rentals.map(c => `
+      <div class="detail-row"><span>🚗 ${c.region}</span><span>总额:${c.total_car_cost}</span></div>
+      <div style="font-size:11px;color:#856404;background:#FFF9E6;padding:4px 6px;margin:4px 0 8px;border-radius:4px;">💡 ${c.alert}</div>
+    `).join('');
+
+    let hotelHtml = opt.accommodation.map(h => `
+      <div class="detail-row"><span>🏨 ${h.city} (住${h.nights}晚)</span><span>单价:${h.avg_price_per_night}</span></div>
+    `).join('');
+
+    card.innerHTML = `
+      <div class="opt-header">
+        <div class="opt-name">${opt.option_name}</div>
+        <div class="opt-badge">方案 ${idx + 1}</div>
+      </div>
+      <div class="opt-desc">${opt.logic_desc}</div>
+      
+      <div class="finance-block">
+        <div class="fin-item"><div class="fin-label">团队总开销</div><div class="fin-val">${opt.total_group_cost}</div></div>
+        <div class="fin-item"><div class="fin-label">全员人均</div><div class="fin-val">${opt.cost_per_person}</div></div>
+      </div>
+
+      <div class="detail-section"><div class="detail-title"><i class="ti ti-plane-departure"></i> 大交通机票精算</div>${flightHtml}</div>
+      <div class="detail-section"><div class="detail-title"><i class="ti ti-car"></i> 车辆自驾/交通开销</div>${carHtml}</div>
+      <div class="detail-section"><div class="detail-title"><i class="ti ti-bed"></i> 每日间夜宿锚分配</div>${hotelHtml}</div>
+
+      <button class="lock-btn" onclick="lockThisOption(${opt.option_id}, event)">
+        锁定此大方向，开始细构每日景点 🚀
+      </button>
+    `;
+
+    card.addEventListener('click', (e) => {
+      if(e.target.tagName === 'BUTTON' || e.target.parentElement.tagName === 'BUTTON') return;
+      selectCard(idx);
+    });
+    list.appendChild(card);
+  });
+}
+
+function selectCard(idx) {
+  document.querySelectorAll('.option-card').forEach(c => c.classList.remove('active'));
+  document.getElementById(`opt-card-${idx}`).classList.add('active');
+  
+  if(globalOptions[idx] && globalOptions[idx].macro_route) {
+    drawMacroRoute(globalOptions[idx].macro_route);
+    const pill = document.getElementById('map-title-pill');
+    pill.textContent = globalOptions[idx].option_name;
+    pill.style.display = 'block';
+  }
+}
+
+function lockThisOption(optionId, event) {
+  event.stopPropagation();
+  alert(`成功选定大框架 [${optionId}]！下一期我们将开发“第二阶段：解锁微观景点地图”。`);
+}
+</script>
+</body>
+</html>
