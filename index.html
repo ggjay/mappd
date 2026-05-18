@@ -104,7 +104,10 @@
   
   @keyframes ant-flow { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
   .animated-flow-line { animation: ant-flow 12s linear infinite !important; }
-  .animated-flow-line.highlight-active { stroke-width: 5.5 !important; opacity: 1 !important; animation-duration: 4s !important; }
+  
+  /* 🌟 核心升级：高亮加粗激活态，加粗线体并提高发光透明度 */
+  .animated-flow-line.highlight-active { stroke-width: 6.5 !important; opacity: 1 !important; animation-duration: 3.5s !important; }
+  
   .macro-clean-circle { background: #1A1814; color: #fff; border: 2px solid #fff; border-radius: 50%; width: 16px !important; height: 16px !important; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
   
   .loading-overlay { position: absolute; inset: 0; background: var(--surface); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
@@ -221,10 +224,14 @@ function drawMacroRoute(routeData, optionId) {
   if (!map) { initMacroMap(centerLat, centerLng, zoomLevel); } 
   else { map.setView([centerLat, centerLng], zoomLevel); }
 
-  // 💥 修复指针越界：通过唯一的、在 timeline_flows 内部和 segments 对齐的纯文本标号来完成高亮匹配
+  // 🌟 核心重构：1:1 按索引生成地图线段层
   if (routeData.segments && routeData.segments.length) {
     routeData.segments.forEach((seg, sIdx) => {
-      if(!seg || !seg.coords) return;
+      if(!seg || !seg.coords || seg.coords.length < 2) return;
+      
+      // 如果起点和终点完全重合（比如大交通占位），则不需要在地图上连线
+      if(seg.coords[0][0] === seg.coords[1][0] && seg.coords[0][1] === seg.coords[1][1]) return;
+
       const isDrive = seg.mode === 'drive';
       const lineColor = isDrive ? '#2D6A4F' : '#B5451B';
       const lineDash = isDrive ? '12, 10' : '4, 12';
@@ -252,7 +259,6 @@ function drawMacroRoute(routeData, optionId) {
 }
 
 function highlightMapSegment(optionId, segIndex, active) {
-  if(segIndex < 0) return;
   const targetId = `opt-${optionId}-seg-${segIndex}`;
   const layer = polylineLayers[targetId];
   if (!layer) return;
@@ -280,14 +286,10 @@ async function generateOptions() {
       body: JSON.stringify({ start_point, destination, days, travelers })
     });
 
-    if (!res.ok) {
-      throw new Error(`服务器返回错误状态码: ${res.status}`);
-    }
+    if (!res.ok) throw new Error(`服务器报错: ${res.status}`);
 
     const data = await res.json();
-    if (!data || !data.options) {
-      throw new Error("大模型交卷格式无法被正常结构化解析");
-    }
+    if (!data || !data.options) throw new Error("大模型返回格式解析异常");
 
     globalOptions = data.options;
     renderOptionCards(data.options);
@@ -297,7 +299,6 @@ async function generateOptions() {
     showNotif(e.message, true);
     console.error(e);
   } finally {
-    // 💥 终极硬保护：无论发生什么，一定会隐藏遮罩层，释放按钮，终结无限旋转
     if(overlay) overlay.className = 'loading-overlay';
     if(btn) { btn.disabled = false; btn.classList.remove('loading'); }
   }
@@ -326,15 +327,11 @@ function renderOptionCards(options) {
         </div>
       `;
 
-      // 💥 完美防崩：如果线段索引映射不上，降级为-1静默处理，确保天数垂直轴顺利展示
-      let targetSegIndex = -1;
-      if (isDrive) { targetSegIndex = 0; } 
-      else if (fIdx > 1) { targetSegIndex = 1; }
-
+      // 🌟 终极优雅：没有任何多余算法，卡片索引是多少，直接去高亮地图上对应索引的专属线条！
       return `
         <div class="timeline-node node-flow-${flow.type}" 
-             onmouseenter="highlightMapSegment(${opt.option_id}, ${targetSegIndex}, true)"
-             onmouseleave="highlightMapSegment(${opt.option_id}, ${targetSegIndex}, false)">
+             onmouseenter="highlightMapSegment(${opt.option_id}, ${fIdx}, true)"
+             onmouseleave="highlightMapSegment(${opt.option_id}, ${fIdx}, false)">
           <div class="node-dot"></div>
           <div class="node-header">
             <span class="node-title">${flow.title || '行程节点'}</span>
