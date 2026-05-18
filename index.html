@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mappd — 大路线智能沙盘决策器</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2 family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
@@ -28,7 +28,6 @@
   .logo-mark i { color: var(--surface); font-size: 17px; }
   .logo-name { font-family: var(--font-display); font-size: 22px; color: var(--ink); letter-spacing: -0.3px; }
   .logo-name span { color: var(--accent); }
-  .tagline { font-size: 13px; color: var(--ink3); }
   
   .input-section { padding: 0 24px; flex-shrink: 0; }
   .input-group { margin-bottom: 12px; }
@@ -49,8 +48,7 @@
   .results-scroll::-webkit-scrollbar { width: 4px; }
   .results-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
   
-  /* 📊 账本大卡片架构 */
-  .option-card { background: var(--bg); border: 2px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; cursor: pointer; transition: all 0.2s ease; position: relative; }
+  .option-card { background: var(--bg); border: 2px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; cursor: pointer; transition: all 0.2s ease; }
   .option-card:hover { border-color: rgba(45,106,79,0.4); }
   .option-card.active { border-color: var(--accent); background: #fff; box-shadow: 0 4px 20px rgba(45,106,79,0.08); }
   
@@ -58,7 +56,6 @@
   .opt-name { font-size: 15px; font-weight: 600; color: var(--ink); flex: 1; padding-right: 10px; }
   .opt-badge { font-size: 11px; padding: 3px 8px; border-radius: 99px; font-weight: 500; background: var(--surface2); color: var(--ink2); }
   .option-card.active .opt-badge { background: var(--accent); color: #fff; }
-  
   .opt-desc { font-size: 13px; color: var(--ink2); margin-bottom: 16px; line-height: 1.5; }
   
   .finance-block { display: flex; gap: 16px; background: rgba(26,24,20,0.03); padding: 12px; border-radius: var(--radius-sm); margin-bottom: 16px; }
@@ -72,19 +69,16 @@
   .option-card.active .detail-section { background: #FDFBF7; }
   .detail-title { font-size: 12px; font-weight: 600; color: var(--ink); text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--border2); padding-bottom: 4px; }
   
-  /* ✈️ 🚗 单元数据精细化展示 */
   .meta-block { font-size: 12px; color: var(--ink2); margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed var(--border2); }
   .meta-block:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
   .meta-head { display: flex; justify-content: space-between; font-weight: 600; color: var(--ink); margin-bottom: 2px; }
   .meta-time { color: var(--accent2); font-weight: 500; font-size: 11px; background: #FFF0EA; padding: 1px 6px; border-radius: 4px; }
   .meta-sub { font-size: 11px; color: var(--ink3); display: flex; justify-content: space-between; margin-top: 2px; }
-  
   .opt-alert { font-size: 11px; background: #FFF9E6; color: #856404; padding: 8px 10px; border-radius: 6px; margin-top: 6px; line-height: 1.4; }
   
   .lock-btn { width: 100%; padding: 12px; background: var(--ink); color: #fff; border: none; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; margin-top: 14px; cursor: pointer; display: none; text-align: center; }
   .option-card.active .lock-btn { display: block; }
   .lock-btn:hover { background: #2d2b27; }
-
   .empty-state { text-align: center; padding: 60px 0; color: var(--ink3); }
   .empty-state i { font-size: 40px; opacity: 0.3; display: block; margin-bottom: 12px; }
   
@@ -92,12 +86,32 @@
   #map { width: 100%; height: 100%; position: absolute; inset: 0; z-index: 1; }
   .map-placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: #e8e0d0; z-index: 5; }
   .map-placeholder-icon { width: 72px; height: 72px; border-radius: 50%; background: rgba(26,24,20,0.06); display: flex; align-items: center; justify-content: center; }
-  .map-placeholder-icon i { font-size: 32px; color: var(--ink3); }
-  
   .map-title-pill { position: absolute; top: 16px; left: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 99px; padding: 8px 18px; font-size: 13px; font-weight: 500; color: var(--ink); z-index: 10; box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: none; }
   
-  /* 💥 地图大节点精简无污染别针样式 */
-  .macro-node-dot { background: #1A1814; border: 2px solid #fff; border-radius: 50%; width: 12px !important; height: 12px !important; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+  /* 💥 核心魔改：SVG 虚线流动动画控制 */
+  @keyframes leaflet-ant-path {
+    from { stroke-dashoffset: 100; }
+    to { stroke-dashoffset: 0; }
+  }
+  .animated-flow-line {
+    animation: leaflet-ant-path 8s linear infinite !important;
+  }
+
+  /* 💥 轻量极简别针：带有次序序号的地图小圈 */
+  .macro-node-circle {
+    background: #1A1814;
+    color: #fff;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    width: 20px !important;
+    height: 20px !important;
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  }
 
   .loading-overlay { position: absolute; inset: 0; background: var(--surface); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; z-index: 20; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
   .loading-overlay.active { opacity: 1; pointer-events: all; }
@@ -159,7 +173,7 @@
   <div class="map-container">
     <div class="map-placeholder" id="map-placeholder">
       <div class="map-placeholder-icon"><i class="ti ti-map-2"></i></div>
-      <p>宏观大路线骨架图层将在此无污染联动呈现</p>
+      <p>宏观大路线骨架图层将在此无污染动感呈现</p>
     </div>
     <div id="map"></div>
     <div class="map-title-pill" id="map-title-pill"></div>
@@ -193,7 +207,7 @@ function clearMacroLayers() {
   macroLines.forEach(l => l.remove()); macroLines = [];
 }
 
-// 💥 核心修改：极其干净的流线制图法，去除所有文字重叠，聚焦拓扑结构
+// 💥 核心底层升级：通过 CSS 加载具有流动生命力的时序路线图
 function drawMacroRoute(routeData) {
   clearMacroLayers();
   
@@ -207,32 +221,41 @@ function drawMacroRoute(routeData) {
     map.setView([centerLat, centerLng], zoomLevel);
   }
 
-  // 1. 纯净绘制交通大走廊骨架线（不加任何突兀的长气泡文字，改用精致的纯线和悬浮Popup描述）
+  // 1. 绘制流动虚线走廊
   if (routeData.segments && routeData.segments.length) {
     routeData.segments.forEach(seg => {
       const isDrive = seg.mode === 'drive';
       const lineColor = isDrive ? '#2D6A4F' : '#B5451B';
-      const lineDash = isDrive ? '8, 6' : '3, 6';
+      const lineDash = isDrive ? '12, 10' : '4, 12';
       
+      // 利用 className 强行注入动态 CSS 滚动类
       const poly = L.polyline(seg.coords, {
-        color: lineColor, weight: 3.5, opacity: 0.85, dashArray: lineDash
+        color: lineColor, 
+        weight: 4, 
+        opacity: 0.85, 
+        dashArray: lineDash,
+        className: 'animated-flow-line' 
       }).addTo(map);
       
-      // 点击线段时才会弹出小巧的提示，彻底杜绝强行刷屏
       poly.bindPopup(`<span style="font-size:12px; font-weight:600; color:${lineColor};">${seg.days_label} · ${seg.title}</span>`);
       macroLines.push(poly);
     });
   }
 
-  // 2. 标出无污染的圆点几何桩，鼠标悬浮（Tooltip）显示地名，绝不在地图上写大字
+  // 2. 绘制极简序号大圆点（用序号清晰告知路线先后秩序，绝不发生文字叠罗汉）
   if (routeData.anchors && routeData.anchors.length) {
-    routeData.anchors.forEach(anchor => {
-      const dotIcon = L.divIcon({ className: 'macro-node-dot', iconSize: [12, 12], iconAnchor: [6, 6] });
-      const m = L.marker([anchor.lat, anchor.lng], { icon: dotIcon }).addTo(map);
+    routeData.anchors.forEach((anchor, i) => {
+      const numIcon = L.divIcon({ 
+        className: 'macro-node-circle', 
+        html: `${i + 1}`, // 注入 1, 2, 3 数字
+        iconSize: [20, 20], 
+        iconAnchor: [10, 10] 
+      });
+      const m = L.marker([anchor.lat, anchor.lng], { icon: numIcon }).addTo(map);
       
-      // 采用优雅轻量的 Tooltip 浮动绑在地名上
-      m.bindTooltip(`<div style="font-weight:600; padding:2px 4px;">${anchor.name}</div>`, {
-        permanent: true, direction: 'top', className: '', offset: [0, -6]
+      // 优雅结合轻量 Tooltip，鼠标移上去显示它的功能，默认只悬浮城市名字
+      m.bindTooltip(`<div style="font-weight:600; font-size:12px; padding:2px 4px;">${i+1}. ${anchor.name} <span style="font-weight:400; font-size:11px; color:#666;">(${anchor.role})</span></div>`, {
+        permanent: true, direction: 'top', offset: [0, -10]
       });
       macroMarkers.push(m);
     });
@@ -275,7 +298,6 @@ async function generateOptions() {
   btn.disabled = false; btn.classList.remove('loading');
 }
 
-// 💥 核心前端改写：将所有时空硬指标（航段、参考时间、纯驾车公里数、纯开车时段）以完美精细的图表展现
 function renderOptionCards(options) {
   const list = document.getElementById('options-list');
   list.innerHTML = '';
@@ -285,7 +307,6 @@ function renderOptionCards(options) {
     card.className = `option-card ${idx === 0 ? 'active' : ''}`;
     card.id = `opt-card-${idx}`;
     
-    // 1. 机票硬指标渲染
     let flightHtml = opt.flights.map(f => `
       <div class="meta-block">
         <div class="meta-head">
@@ -294,14 +315,13 @@ function renderOptionCards(options) {
         </div>
         <div style="font-weight: 500; color:#1a1814; margin-top:2px;">${f.route}</div>
         <div class="meta-sub">
-          <span>⏰ 时刻排班: ${f.flight_time}</span>
+          <span>⏰ 参考时段: ${f.flight_time}</span>
           <span>人均:${f.cost_per_person}</span>
         </div>
         <div style="font-size:11px; color:#999; margin-top:2px;">💡 ${f.note || ''}</div>
       </div>
     `).join('');
 
-    // 2. 自驾硬指标渲染
     let carHtml = opt.car_rentals.map(c => {
       let segmentsHtml = c.drive_segments ? c.drive_segments.map(seg => `
         <div style="background:rgba(26,24,20,0.02); padding:6px; border-radius:4px; margin-bottom:4px; font-size:11px;">
@@ -316,8 +336,8 @@ function renderOptionCards(options) {
       return `
         <div class="meta-block" style="border-bottom:none;">
           <div class="meta-sub" style="margin-bottom:6px;">
-            <span>🛫 <b>取车:</b> ${c.pickup_location || '车行指定机场点'}</span>
-            <span>🛬 <b>还车:</b> ${c.dropoff_location || '车行指定机场点'}</span>
+            <span>🛫 <b>取车:</b> ${c.pickup_location || '指定枢纽'}</span>
+            <span>🛬 <b>还车:</b> ${c.dropoff_location || '指定枢纽'}</span>
           </div>
           ${segmentsHtml}
           <div class="opt-alert">⚠️ <b>车务防坑:</b> ${c.alert}</div>
@@ -325,7 +345,6 @@ function renderOptionCards(options) {
       `;
     }).join('');
 
-    // 3. 酒店宿锚硬指标渲染
     let hotelHtml = opt.accommodation.map(h => `
       <div class="detail-row">
         <span>🏨 ${h.city} (入住 ${h.nights} 晚)</span>
@@ -376,7 +395,7 @@ function selectCard(idx) {
 
 function lockThisOption(optionId, event) {
   event.stopPropagation();
-  alert(`已锁定方案 [${optionId}]！下一期我们将呼叫具体的景点引擎。`);
+  alert(`大方向已锁死！第一步大功告成，接下来随时可以进行第二步的每日行程构建。`);
 }
 </script>
 </body>
