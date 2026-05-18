@@ -63,6 +63,8 @@
   .timeline-container { position: relative; padding-left: 18px; border-left: 2px solid var(--border); margin-top: 14px; }
   .timeline-node { position: relative; margin-bottom: 20px; padding: 12px; background: var(--bg); border: 1px solid var(--border2); border-radius: 8px; transition: all 0.2s ease; }
   .option-card.active .timeline-node { background: #FDFBF7; }
+  
+  /* 💥 联动聚焦高亮状态 */
   .timeline-node.focused-node { border-color: var(--ink) !important; background: var(--surface2) !important; transform: translateX(2px); }
   
   .node-dot { position: absolute; left: -25px; top: 16px; width: 12px; height: 12px; border-radius: 50%; background: var(--surface2); border: 2px solid var(--ink3); }
@@ -86,11 +88,10 @@
   .empty-state { text-align: center; padding: 40px 0; color: var(--ink3); font-size: 13px; }
   .empty-state i { font-size: 32px; opacity: 0.4; display: block; margin-bottom: 8px; }
   
-  /* 🎨 地图主视窗容器与高级莫兰迪质感初始占位 */
+  /* 地图及初始看板图设计 */
   .map-container { position: relative; background: #E8E2D5; height: 100vh; }
   #map { width: 100%; height: 100%; position: absolute; inset: 0; z-index: 1; background: #E8E2D5; }
   
-  /* 💥 高阶打磨：完美还原你提供的智能助手初始化看板界面 */
   .map-placeholder { 
     position: absolute; inset: 0; 
     display: flex; flex-direction: column; align-items: center; justify-content: center; 
@@ -100,7 +101,6 @@
   .guide-title { font-family: 'DM Serif Display', serif; font-size: 32px; color: var(--ink); margin-bottom: 8px; letter-spacing: -0.5px; }
   .guide-subtitle { font-size: 16px; color: var(--ink2); margin-bottom: 40px; font-weight: 500; }
   
-  /* 环形拓扑星盘生态 */
   .astrolabe-wrapper { position: relative; width: 340px; height: 340px; display: flex; align-items: center; justify-content: center; margin-bottom: 40px; }
   .astrolabe-orbit { position: absolute; border: 1px dashed rgba(26,24,20,0.15); border-radius: 50%; }
   .orbit-1 { width: 340px; height: 340px; animation: orbit-rot 50s linear infinite; }
@@ -114,7 +114,6 @@
   .helper-bubble .b-title { font-size: 12px; font-weight: 600; color: var(--ink); }
   .helper-bubble .b-desc { font-size: 10px; color: var(--ink3); white-space: nowrap; }
   
-  /* 气泡绝对定位对齐图表 */
   .b-pos1 { top: -10px; left: 110px; }
   .b-pos2 { top: 110px; right: -60px; }
   .b-pos3 { bottom: -10px; left: 110px; }
@@ -122,22 +121,25 @@
   
   @keyframes orbit-rot { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   
-  /* 💥 底部卡片式常驻菜单 */
   .bottom-dock { position: absolute; bottom: 30px; background: #fff; border: 1px solid var(--border); padding: 10px 24px; border-radius: 32px; display: flex; gap: 24px; box-shadow: 0 8px 32px rgba(0,0,0,0.06); z-index: 10; }
   .dock-item { display: flex; align-items: center; gap: 8px; color: var(--ink2); font-size: 12px; font-weight: 600; cursor: pointer; transition: color 0.2s; }
   .dock-item:hover { color: var(--accent); }
   .dock-item i { font-size: 16px; }
   
-  /* 💥 核心升级：利用内嵌 SVG 画布对叶子节点曲线做精准控制 */
-  .animated-flow-path { fill: none; stroke-linecap: round; stroke-dasharray: 8, 8; animation: curve-ant-flow 5s linear infinite; transition: stroke 0.3s, stroke-width 0.3s; }
+  /* 💥 SVG 曲线流向的基础 CSS 样式 */
+  .animated-flow-path { fill: none; stroke-linecap: round; stroke-dasharray: 8, 8; animation: curve-ant-flow 5s linear infinite; transition: stroke 0.25s, stroke-width 0.25s, filter 0.25s; }
   @keyframes curve-ant-flow { from { stroke-dashoffset: 50; } to { stroke-dashoffset: 0; } }
-  .animated-flow-path.highlight-active { stroke: #ff4500 !important; stroke-width: 6.5 !important; animation-duration: 1.5s !important; filter: drop-shadow(0 0 4px rgba(255,69,0,0.5)); opacity: 1 !important; }
+  
+  /* 💥 激活联动时的强力高亮视觉渲染类 */
+  .animated-flow-path.highlight-active { stroke: #ff4500 !important; stroke-width: 6.5 !important; animation-duration: 1.5s !important; filter: drop-shadow(0 0 5px rgba(255,69,0,0.6)); opacity: 1 !important; }
 
   .macro-clean-circle { background: #1A1814; color: #fff; border: 2px solid #fff; border-radius: 50%; width: 20px !important; height: 20px !important; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; box-shadow: 0 3px 8px rgba(0,0,0,0.15); }
   .loading-overlay { position: absolute; inset: 0; background: var(--surface); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
   .loading-overlay.active { opacity: 1; pointer-events: all; }
+  .loading-title { font-size: 22px; font-weight: 500; color: var(--ink); }
   .notif { position: fixed; bottom: 24px; right: 24px; background: var(--ink); color: var(--surface); padding: 12px 20px; border-radius: var(--radius-sm); font-size: 13px; z-index: 200; transform: translateY(20px); opacity: 0; transition: all 0.3s; }
   .notif.show { transform: translateY(0); opacity: 1; }
+  .notif.error { background: #B56545; }
 </style>
 </head>
 <body>
@@ -208,7 +210,7 @@
     </div>
     
     <div class="loading-overlay" id="loading-overlay">
-      <div class="loading-title">精算师正在构建宏观曲线时空沙盘...</div>
+      <div class="loading-title">精算师正在构建宏观时空曲线沙盘...</div>
     </div>
   </div>
 </div>
@@ -217,6 +219,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 let map = null, macroMarkers = [], curveSvgLayers = [], globalOptions = [];
+let currentActiveSegments = []; // 全局缓存地理线条坐标资产
 
 function showNotif(msg, isError = false) {
   const n = document.getElementById('notif'); if(!n) return;
@@ -229,20 +232,21 @@ function initMacroMap() {
   document.getElementById('map-placeholder').style.display = 'none';
   map = L.map('map', { zoomControl: false, attributionControl: false }).setView([38.8, -14.0], 5);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 10 }).addTo(map);
+
+  // 💥 严密监听底图的生命周期位移：每次缩放、拖拽，都会毫秒级强制重算更新 SVG
+  map.on('zoomend moveend viewreset', () => {
+    recalculateAllCurves();
+  });
 }
 
 function clearMacroLayers() {
   macroMarkers.forEach(m => m?.remove()); macroMarkers = [];
   curveSvgLayers.forEach(l => l?.remove()); curveSvgLayers = [];
+  currentActiveSegments = [];
 }
 
-// 💥 原型沉淀：通过自定义 Leaflet SVG 图层，精准计算两点二次贝塞尔控制点，拉开往返双曲线
-function drawCurveLine(fromLatLng, toLatLng, mode, optionId, flowIndex, isReturn = false) {
-  const isDrive = mode === 'drive';
-  const strokeColor = isDrive ? '#2D6A4F' : '#B5451B';
-  const dashPattern = isDrive ? '10, 8' : '3, 10';
-
-  // 将地理坐标转化为图层像素坐标进行几何运算
+// 💥 几何计算器：根据当前视窗的最优投影，计算出反向、带对称弧度的贝塞尔弯曲指令
+function computeSvgPathString(fromLatLng, toLatLng, isReturn) {
   const startP = map.latLngToLayerPoint(fromLatLng);
   const endP = map.latLngToLayerPoint(toLatLng);
   
@@ -252,35 +256,67 @@ function drawCurveLine(fromLatLng, toLatLng, mode, optionId, flowIndex, isReturn
   const dx = endP.x - startP.x;
   const dy = endP.y - startP.y;
   const len = Math.sqrt(dx * dx + dy * dy);
-  if(len === 0) return;
+  
+  if (len === 0) return '';
 
-  // 弯曲弧度控制：去程和回程通过相反系数形成漂亮的“大括号”形分离
-  const offset = len * 0.16;
+  const offset = len * 0.15; // 弯曲跨度系数
   const nX = -dy / len;
   const nY = dx / len;
   
+  // 通过正负反转 offset，让去程向上挺，回程向下沉，拉开平行轨道
   const controlX = midX + nX * (isReturn ? -offset : offset);
   const controlY = midY + nY * (isReturn ? -offset : offset);
 
-  // 构建高精度 SVG 节点
-  const bounds = map.getBounds();
+  return `M ${startP.x} ${startP.y} Q ${controlX} ${controlY} ${endP.x} ${endP.y}`;
+}
+
+// 💥 SVG 大管家：统一用固定的全球投影层进行渲染，彻底杜绝图层“随风飘散”的宿疾
+function renderCurvesOnMap(segments, optionId) {
+  curveSvgLayers.forEach(l => l?.remove());
+  curveSvgLayers = [];
+  
+  if (!segments || segments.length === 0) return;
+
   const svgNS = "http://www.w3.org/2000/svg";
   const svgEl = document.createElementNS(svgNS, "svg");
-  const pathEl = document.createElementNS(svgNS, "path");
+  svgEl.setAttribute('style', 'position: absolute; pointer-events: none; width: 100%; height: 100%;');
 
-  pathEl.setAttribute('d', `M ${startP.x} ${startP.y} Q ${controlX} ${controlY} ${endP.x} ${endP.y}`);
-  pathEl.setAttribute('stroke', strokeColor);
-  pathEl.setAttribute('stroke-width', '3.5');
-  pathEl.setAttribute('opacity', '0.75');
-  pathEl.setAttribute('class', 'animated-flow-path');
-  pathEl.setAttribute('style', `stroke-dasharray: ${dashPattern};`);
-  pathEl.setAttribute('id', `curve-opt-${optionId}-flow-${flowIndex}`);
+  segments.forEach((seg, sIdx) => {
+    if (!seg || !seg.coords || seg.coords.length < 2) return;
+    if (seg.coords[0][0] === seg.coords[1][0] && seg.coords[0][1] === seg.coords[1][1]) return;
 
-  svgEl.appendChild(pathEl);
+    const pathString = computeSvgPathString(seg.coords[0], seg.coords[1], seg.is_return);
+    if (!pathString) return;
 
-  // 用一个透明占位覆盖层把纯代码 SVG 动态定格在地图上
+    const pathEl = document.createElementNS(svgNS, "path");
+    const isDrive = seg.mode === 'drive';
+    
+    pathEl.setAttribute('d', pathString);
+    pathEl.setAttribute('stroke', isDrive ? '#4A5B4E' : '#B56545');
+    pathEl.setAttribute('stroke-width', '3.5');
+    pathEl.setAttribute('fill', 'none');
+    pathEl.setAttribute('opacity', '0.75');
+    pathEl.setAttribute('class', 'animated-flow-path');
+    pathEl.setAttribute('style', `stroke-dasharray: ${isDrive ? '10, 8' : '3, 10'};`);
+    pathEl.setAttribute('id', `curve-opt-${optionId}-flow-${sIdx}`);
+
+    svgEl.appendChild(pathEl);
+  });
+
+  // 锁死全球边界，使像素坐标系与 Leaflet 完全熔断一体
   const svgOverlay = L.svgOverlay(svgEl, [[-90, -180], [90, 180]]).addTo(map);
   curveSvgLayers.push(svgOverlay);
+}
+
+function recalculateAllCurves() {
+  const activeCard = document.querySelector('.option-card.active');
+  if (!activeCard || currentActiveSegments.length === 0) return;
+  
+  const idx = parseInt(activeCard.id.replace('opt-card-', ''));
+  const opt = globalOptions[idx];
+  if (opt) {
+    renderCurvesOnMap(currentActiveSegments, opt.option_id);
+  }
 }
 
 function highlightCurveSegment(optionId, flowIndex, active) {
@@ -350,7 +386,6 @@ function renderOptionCards(options) {
         </div>
       `;
 
-      // 💥 纯原型对齐：移入哪个卡片，就直接加粗加亮对应索引的那根专属曲线！
       return `
         <div class="timeline-node node-flow-${flow.type}" id="node-opt-${opt.option_id}-flow-${fIdx}"
              onmouseenter="highlightCurveSegment(${opt.option_id}, ${fIdx}, true)"
@@ -405,17 +440,15 @@ function selectCard(idx) {
   if(!opt || !opt.macro_route) return;
   
   clearMacroLayers();
+  
+  // 注入全量图层线段资产到重绘缓存中
+  if(opt.macro_route.segments) {
+    currentActiveSegments = opt.macro_route.segments;
+  }
+  
   map.setView([opt.macro_route.center_lat || 39.5, opt.macro_route.center_lng || -8.0], opt.macro_route.zoom_level || 5);
 
-  // 绘制曲线
-  if(opt.macro_route.segments) {
-    opt.macro_route.segments.forEach((seg, sIdx) => {
-      if(!seg || !seg.coords || seg.coords.length < 2) return;
-      drawCurveLine(seg.coords[0], seg.coords[1], seg.mode, opt.option_id, sIdx, seg.is_return || false);
-    });
-  }
-
-  // 绘制圆圈序号桩
+  // 绘制大节点序号小圈
   if(opt.macro_route.anchors) {
     opt.macro_route.anchors.forEach((anchor, aIdx) => {
       const cleanIcon = L.divIcon({ className: 'macro-clean-circle', html: `${aIdx + 1}`, iconSize: [20, 20], iconAnchor: [10, 10] });
@@ -424,15 +457,9 @@ function selectCard(idx) {
       macroMarkers.push(m);
     });
   }
-}
 
-// 重新建立动态监听，确保地图缩放时 SVG 贝塞尔曲线几何位置可以全自动自适应重绘
-window.addEventListener('resize', buildCanvasLines);
-if(map) {
-  map.on('zoomend moveend', () => {
-    const activeIdx = globalOptions.findIndex((_, idx) => document.getElementById(`opt-card-${idx}`)?.classList.contains('active'));
-    if(activeIdx !== -1) selectCard(activeIdx);
-  });
+  // 触发首刷渲染
+  renderCurvesOnMap(currentActiveSegments, opt.option_id);
 }
 
 function lockThisOption(optionId, event) {
