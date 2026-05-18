@@ -14,11 +14,11 @@ export default async function handler(req, res) {
     const apiKey = process.env.DEEPSEEK_API_KEY; 
     if (!apiKey) return res.status(500).json({ error: "服务器未配置 DEEPSEEK_API_KEY" });
 
-    // 💥 终极时序流水账提示词：强行锁死天数闭环，必须交代清楚取车、还车、每段纯驾车时间点
+    // 💥 史诗级提示词：逼迫大模型必须把 10 天的自驾里程、去程还车、海岛内自驾、甚至最后回程全部连成铁链
     const prompt = `你是一个骨灰级的跨国自驾规划专家与全栈行程精算师。
     当前需求：出发地【${start_point}】，目的地【${destination}】，总天数【${days}】天，出行人数【${travelers}】人。
     
-    请精算并设计【2种】具有本质差异的宏观长途路线与交通骨架方案（例如方案一主打半岛全自驾+飞岛，方案二主打跨境高铁+海岛飞签）。
+    请精算并设计【2种】具有本质差异的宏观长途交通、住宿和路线骨架方案。
     你必须【仅仅】返回一个标准的 JSON 对象，绝对不要包含任何前言、后缀解释或 \`\`\`json 标记。
     
     格式必须百分之百精确如下：
@@ -27,16 +27,16 @@ export default async function handler(req, res) {
       "options": [
         {
           "option_id": 1,
-          "option_name": "方案一：例如伊比利亚半岛自驾大循环+亚速尔飞岛版",
+          "option_name": "方案一：例如半岛租车跨境大循环+亚速尔群岛飞岛自驾版",
           "logic_desc": "一句话概括本路线的成本与时间衔接逻辑。",
           "total_group_cost": "￥28000",
           "cost_per_person": "￥14000",
           
-          // 💥 时序流核心：从第1天到最后一天，按大交通移动顺序切分，严禁漏掉任何一天！
+          // 💥 时序流：从第 1 天到最后一天，按大交通移动顺序切分，【必须包含全部 ${days} 天，严禁留空白】！
           "timeline_flows": [
             {
               "days_range": "Day 1",
-              "type": "flight", // flight 或 drive 或 stay
+              "type": "flight",
               "title": "洲际国际大交通（成都出发）",
               "detail_title": "成都 (TFU) ✈️ 马德里 (MAD)",
               "time_window": "参考时段: 14:20 - 20:15",
@@ -48,7 +48,7 @@ export default async function handler(req, res) {
             {
               "days_range": "Day 2 - Day 4",
               "type": "drive",
-              "title": "半岛自驾与跨境移防",
+              "title": "伊比利亚半岛跨境自驾",
               "detail_title": "马德里取车 🚗 托莱多 🚗 里斯本还车",
               "time_window": "自驾取车时段: Day 2 上午 09:30",
               "duration_desc": "纯驾车累计耗时: 约7.5小时",
@@ -57,31 +57,36 @@ export default async function handler(req, res) {
                 "pickup": "马德里巴拉哈斯机场 T4 柜台",
                 "dropoff": "里斯本波尔特拉机场 T1 归还",
                 "distance": "总行驶里程约 680 公里",
-                "drive_hours": "平均每天驾车 2.5 小时"
+                "drive_hours": "纯驾车约 6.5 小时"
               },
               "note": "进入葡萄牙境内需在前台主动激活Via Verde电子高快标签，走专用电子收费车道。"
             },
             {
               "days_range": "Day 5 - Day 8",
               "type": "flight",
-              "title": "跨海海岛无缝切入",
-              "detail_title": "里斯本 (LIS) ✈️ 蓬塔德尔加达 (PDL) 往返",
+              "title": "跨海飞行往返与海岛局部自驾",
+              "detail_title": "里斯本 (LIS) ✈️ 蓬塔德尔加达 (PDL) 往返 + 岛上自驾",
               "time_window": "去程班次: 08:00 - 09:30 / 回程班次: 18:30 - 21:55",
               "duration_desc": "单程航程: 2小时15分钟",
-              "cost_info": "SATA/TAP航空往返人均: ￥1500",
-              "meta_json": { "pickup": "无", "dropoff": "无", "distance": "无", "drive_hours": "无" },
-              "note": "由于海岛行李额严格，建议精简托运行李，大件可寄存里斯本机场。"
+              "cost_info": "SATA航空往返人均 ￥1500 + 岛上3天租车 ￥1200",
+              "meta_json": {
+                "pickup": "亚速尔蓬塔德尔加达机场取车",
+                "dropoff": "亚速尔蓬塔德尔加达机场还车",
+                "distance": "环岛总行驶里程约 220 公里",
+                "drive_hours": "累计驾车约 4.5 小时"
+              },
+              "note": "亚速尔圣米格尔岛多盘山急弯和雨雾，务必提早锁定自动挡车型。"
             },
             {
               "days_range": "Day 9 - Day 10",
               "type": "flight",
-              "title": "洲际回程大闭环",
-              "detail_title": "马德里 (MAD) ✈️ 成都 (TFU)",
-              "time_window": "起飞时段: Day 10 中午 12:15",
-              "duration_desc": "耗时: 约14小时",
-              "cost_info": "包含在国际往返总套票内",
+              "title": "半岛中转与洲际回程大闭环",
+              "detail_title": "里斯本 (LIS) ✈️ 马德里 (MAD) ✈️ 成都 (TFU)",
+              "time_window": "里斯本飞马德里: 06:00-08:15 / 马德里飞成都: 12:15 起飞",
+              "duration_desc": "耗时: 约15.5小时",
+              "cost_info": "包含在国际往返总套票及中转廉航内",
               "meta_json": { "pickup": "无", "dropoff": "无", "distance": "无", "drive_hours": "无" },
-              "note": "从里斯本回马德里建议搭配早班廉航（如瑞安航空，耗时1小时），预留3小时以上的中转行李托运时间。"
+              "note": "从里斯本回马德里转机预留3小时以上，以防廉航延误耽误国际大交通回国。"
             }
           ],
           
@@ -93,23 +98,24 @@ export default async function handler(req, res) {
           "macro_route": {
             "center_lat": 39.5, "center_lng": -8.0, "zoom_level": 5,
             "anchors": [
-              {"name": "马德里", "lat": 40.4168, "lng": -3.7038, "role": "起始枢纽"},
-              {"name": "里斯本", "lat": 38.7223, "lng": -9.1393, "role": "中转走廊"},
-              {"name": "蓬塔德尔加达", "lat": 37.7412, "lng": -25.6756, "role": "海岛节点"}
+              {"name": "马德里", "lat": 40.4168, "lng": -3.7038, "role": "起始枢纽/一期自驾点"},
+              {"name": "里斯本", "lat": 38.7223, "lng": -9.1393, "role": "中转走廊/还车转机点"},
+              {"name": "蓬塔德尔加达", "lat": 37.7412, "lng": -25.6756, "role": "亚速尔圣米格尔海岛目的地"}
             ],
             "segments": [
               {"id": "flow-0", "mode": "drive", "coords": [[40.4168, -3.7038], [38.7223, -9.1393]]},
-              {"id": "flow-1", "mode": "flight", "coords": [[38.7223, -9.1393], [37.7412, -25.6756]]}
+              {"id": "flow-1", "mode": "flight", "coords": [[38.7223, -9.1393], [37.7412, -25.6756]]},
+              {"id": "flow-2", "mode": "flight", "coords": [[37.7412, -25.6756], [38.7223, -9.1393]]}
             ]
           }
         }
       ]
     }
     
-    【极其变态的严苛审计指令】：
-    1. timeline_flows 数组中的天数区间（days_range）相加，必须【百分之百等于】用户输入的总天数 ${days} 天。必须完成从 ${start_point} 出发、境内游玩、海岛跨越、最后回程的完整全生命周期闭环，严禁出现行程中途断流或遗漏天数的情况！
-    2. 对于 type 为 drive 的段落，必须在 meta_json 中详细写明取车点（pickup）、还车点（dropoff）、预估公里数（distance）以及纯驾驶耗时（drive_hours）。
-    3. 宏观地图坐标只需要返回欧洲境内的中转主轴线，严禁返回任何多余、细碎的非交通节点。`;
+    【极其严苛的审计红线】：
+    1. timeline_flows 必须严密覆盖从 Day 1 到 Day ${days} 的每一天！自驾不能只写前几天，后面的海岛自驾（取还车、耗时、里程）和回程中转大闭环必须无缝写出来！
+    2. 对于 type 为 drive 的段落，必须在 meta_json 中写明取车点（pickup）、还车点（dropoff）、预估公里数（distance）以及纯驾驶耗时（drive_hours）。
+    3. 宏观地图只保留主要枢纽路线，严禁返回无关细碎小节点。`;
 
     const response = await fetch('https://api.deepseek.com/chat/completions', {
       method: 'POST',
