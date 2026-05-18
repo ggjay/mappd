@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mappd — 大路线时序智能沙盘</title>
+<title>Mappd — 大路线时序智能决策体系</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
@@ -11,10 +11,10 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #F5F2EC; --surface: #FDFBF7; --surface2: #F0EDE5;
+    --bg: #F4F0E8; --surface: #FDFBF7; --surface2: #EFECE6;
     --ink: #1A1814; --ink2: #6B6860; --ink3: #9E9B94;
-    --accent: #2D6A4F; --accent-light: #D8EDDF; --accent2: #B5451B;
-    --border: rgba(26,24,20,0.1); --border2: rgba(26,24,20,0.06);
+    --accent: #4A5B4E; --accent-light: #E2E7E3; --accent2: #B56545;
+    --border: rgba(26,24,20,0.08); --border2: rgba(26,24,20,0.04);
     --radius: 12px; --radius-sm: 8px;
     --font-body: 'DM Sans', system-ui, sans-serif;
   }
@@ -26,16 +26,14 @@
   .logo-mark { width: 32px; height: 32px; background: var(--ink); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
   .logo-mark i { color: var(--surface); font-size: 17px; }
   .logo-name { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--ink); letter-spacing: -0.3px; }
-  .logo-name span { color: var(--accent); }
   
   .input-section { padding: 0 24px; flex-shrink: 0; }
   .input-group { margin-bottom: 12px; }
   .input-label { font-size: 11px; font-weight: 500; color: var(--ink2); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 5px; display: block; }
-  .input-field { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; font-family: var(--font-body); font-size: 14px; color: var(--ink); outline: none; transition: border-color 0.15s; }
-  .input-field:focus { border-color: var(--accent); }
+  .input-field { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; font-family: var(--font-body); font-size: 14px; color: var(--ink); outline: none; }
   .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   
-  .gen-btn { width: 100%; padding: 13px; background: var(--ink); color: var(--surface); border: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 4px; margin-bottom: 16px; position: relative; }
+  .gen-btn { width: 100%; padding: 13px; background: var(--ink); color: var(--surface); border: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 4px; margin-bottom: 16px; }
   .gen-btn:disabled { background: var(--ink3); cursor: not-allowed; }
   .gen-btn .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
   .gen-btn.loading .spinner { display: block; }
@@ -48,74 +46,98 @@
   .results-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
   
   .option-card { background: var(--bg); border: 2px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 20px; cursor: pointer; transition: all 0.25s ease; }
-  .option-card:hover { border-color: rgba(45,106,79,0.4); }
-  .option-card.active { border-color: var(--accent); background: #fff; box-shadow: 0 6px 24px rgba(45,106,79,0.06); }
+  .option-card.active { border-color: var(--accent); background: #fff; box-shadow: 0 6px 24px rgba(74,91,78,0.06); }
   
   .opt-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
-  .opt-name { font-size: 15px; font-weight: 600; color: var(--ink); flex: 1; padding-right: 10px; }
+  .opt-name { font-size: 15px; font-weight: 600; color: var(--ink); flex: 1; }
   .opt-badge { font-size: 11px; padding: 3px 8px; border-radius: 99px; font-weight: 500; background: var(--surface2); color: var(--ink2); }
   .option-card.active .opt-badge { background: var(--accent); color: #fff; }
-  .opt-desc { font-size: 13px; color: var(--ink2); margin-bottom: 14px; line-height: 1.5; }
+  .opt-desc { font-size: 13px; color: var(--ink2); margin-bottom: 14px; }
   
   .finance-block { display: flex; gap: 16px; background: rgba(26,24,20,0.03); padding: 12px; border-radius: var(--radius-sm); margin-bottom: 16px; }
-  .option-card.active .finance-block { background: rgba(45,106,79,0.04); }
   .fin-item { flex: 1; }
-  .fin-label { font-size: 11px; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.5px; }
+  .fin-label { font-size: 11px; color: var(--ink3); text-transform: uppercase; }
   .fin-val { font-size: 19px; font-weight: 700; color: var(--accent2); }
   .option-card.active .fin-val { color: var(--accent); }
   
-  .detail-title { font-size: 12px; font-weight: 600; color: var(--ink); text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
   .timeline-container { position: relative; padding-left: 18px; border-left: 2px solid var(--border); margin-top: 14px; }
   .timeline-node { position: relative; margin-bottom: 20px; padding: 12px; background: var(--bg); border: 1px solid var(--border2); border-radius: 8px; transition: all 0.2s ease; }
   .option-card.active .timeline-node { background: #FDFBF7; }
-  .timeline-node:hover { border-color: var(--ink); transform: translateX(2px); }
+  .timeline-node.focused-node { border-color: var(--ink) !important; background: var(--surface2) !important; transform: translateX(2px); }
   
   .node-dot { position: absolute; left: -25px; top: 16px; width: 12px; height: 12px; border-radius: 50%; background: var(--surface2); border: 2px solid var(--ink3); }
-  .timeline-node:hover .node-dot { background: var(--ink); border-color: var(--ink); }
   .node-flow-flight .node-dot { border-color: var(--accent2); }
   .node-flow-drive .node-dot { border-color: var(--accent); }
   
   .node-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-  .node-days { font-size: 11px; font-weight: 600; color: #fff; background: var(--ink2); padding: 1px 6px; border-radius: 4px; }
+  .node-days { font-size: 11px; font-weight: 600; color: #fff; padding: 1px 6px; border-radius: 4px; }
   .node-flow-flight .node-days { background: var(--accent2); }
   .node-flow-drive .node-days { background: var(--accent); }
-  
   .node-title { font-size: 13px; font-weight: 600; color: var(--ink); }
   .node-detail { font-size: 13px; font-weight: 500; margin: 4px 0; color: #1a1814; }
+  .node-sub { font-size: 11px; color: var(--ink2); }
   .node-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; background: rgba(0,0,0,0.02); padding: 6px; border-radius: 4px; font-size: 11px; color: var(--ink2); margin-top: 4px; }
   .detail-section { margin-bottom: 16px; background: rgba(26,24,20,0.01); padding: 12px; border-radius: 8px; border: 1px solid var(--border2); }
-  .option-card.active .detail-section { background: #FDFBF7; }
-  
   .detail-row { font-size: 12px; display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed var(--border2); color: var(--ink2); }
+  
   .lock-btn { width: 100%; padding: 12px; background: var(--ink); color: #fff; border: none; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; margin-top: 14px; cursor: pointer; display: none; text-align: center; }
   .option-card.active .lock-btn { display: block; }
   
-  .empty-state { text-align: center; padding: 60px 0; color: var(--ink3); }
-  .empty-state i { font-size: 40px; opacity: 0.3; display: block; margin-bottom: 12px; }
+  .empty-state { text-align: center; padding: 40px 0; color: var(--ink3); font-size: 13px; }
+  .empty-state i { font-size: 32px; opacity: 0.4; display: block; margin-bottom: 8px; }
   
-  .map-container { position: relative; background: #e8e0d0; height: 100vh; }
-  #map { width: 100%; height: 100%; position: absolute; inset: 0; z-index: 1; }
+  /* 🎨 地图主视窗容器与高级莫兰迪质感初始占位 */
+  .map-container { position: relative; background: #E8E2D5; height: 100vh; }
+  #map { width: 100%; height: 100%; position: absolute; inset: 0; z-index: 1; background: #E8E2D5; }
   
-  .map-placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle at center, #FDFBF7 0%, #E8E0D0 100%); z-index: 5; overflow: hidden; }
-  .sandbox-canvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.25; transition: transform 0.1s ease-out; }
-  .placeholder-astrolabe { width: 180px; height: 180px; border: 2px dashed var(--ink3); border-radius: 50%; display: flex; align-items: center; justify-content: center; animation: slow-spin 40s linear infinite; }
-  .placeholder-center-core { width: 50px; height: 50px; background: var(--ink); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px; }
-  @keyframes slow-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  /* 💥 高阶打磨：完美还原你提供的智能助手初始化看板界面 */
+  .map-placeholder { 
+    position: absolute; inset: 0; 
+    display: flex; flex-direction: column; align-items: center; justify-content: center; 
+    background: radial-gradient(circle at center, #FDFBF7 0%, #E8E2D5 100%); 
+    z-index: 5; padding: 40px; text-align: center;
+  }
+  .guide-title { font-family: 'DM Serif Display', serif; font-size: 32px; color: var(--ink); margin-bottom: 8px; letter-spacing: -0.5px; }
+  .guide-subtitle { font-size: 16px; color: var(--ink2); margin-bottom: 40px; font-weight: 500; }
   
-  @keyframes ant-flow { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
-  .animated-flow-line { animation: ant-flow 12s linear infinite !important; }
+  /* 环形拓扑星盘生态 */
+  .astrolabe-wrapper { position: relative; width: 340px; height: 340px; display: flex; align-items: center; justify-content: center; margin-bottom: 40px; }
+  .astrolabe-orbit { position: absolute; border: 1px dashed rgba(26,24,20,0.15); border-radius: 50%; }
+  .orbit-1 { width: 340px; height: 340px; animation: orbit-rot 50s linear infinite; }
+  .orbit-2 { width: 220px; height: 220px; animation: orbit-rot 35s linear infinite reverse; }
   
-  /* 🌟 核心升级：高亮加粗激活态，加粗线体并提高发光透明度 */
-  .animated-flow-line.highlight-active { stroke-width: 6.5 !important; opacity: 1 !important; animation-duration: 3.5s !important; }
+  .astrolabe-center { width: 100px; height: 100px; background: #4A5B4E; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 36px; box-shadow: 0 10px 30px rgba(74,91,78,0.25); z-index: 2; }
   
-  .macro-clean-circle { background: #1A1814; color: #fff; border: 2px solid #fff; border-radius: 50%; width: 16px !important; height: 16px !important; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+  .helper-bubble { position: absolute; background: #fff; border: 1px solid var(--border); padding: 10px 16px; border-radius: 24px; box-shadow: 0 6px 20px rgba(0,0,0,0.04); display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; transition: all 0.3s ease; cursor: pointer; }
+  .helper-bubble:hover { transform: scale(1.05); border-color: var(--accent); box-shadow: 0 10px 25px rgba(74,91,78,0.12); }
+  .helper-bubble i { font-size: 16px; color: var(--ink2); background: var(--bg); width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .helper-bubble .b-title { font-size: 12px; font-weight: 600; color: var(--ink); }
+  .helper-bubble .b-desc { font-size: 10px; color: var(--ink3); white-space: nowrap; }
   
+  /* 气泡绝对定位对齐图表 */
+  .b-pos1 { top: -10px; left: 110px; }
+  .b-pos2 { top: 110px; right: -60px; }
+  .b-pos3 { bottom: -10px; left: 110px; }
+  .b-pos4 { top: 110px; left: -60px; }
+  
+  @keyframes orbit-rot { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  
+  /* 💥 底部卡片式常驻菜单 */
+  .bottom-dock { position: absolute; bottom: 30px; background: #fff; border: 1px solid var(--border); padding: 10px 24px; border-radius: 32px; display: flex; gap: 24px; box-shadow: 0 8px 32px rgba(0,0,0,0.06); z-index: 10; }
+  .dock-item { display: flex; align-items: center; gap: 8px; color: var(--ink2); font-size: 12px; font-weight: 600; cursor: pointer; transition: color 0.2s; }
+  .dock-item:hover { color: var(--accent); }
+  .dock-item i { font-size: 16px; }
+  
+  /* 💥 核心升级：利用内嵌 SVG 画布对叶子节点曲线做精准控制 */
+  .animated-flow-path { fill: none; stroke-linecap: round; stroke-dasharray: 8, 8; animation: curve-ant-flow 5s linear infinite; transition: stroke 0.3s, stroke-width 0.3s; }
+  @keyframes curve-ant-flow { from { stroke-dashoffset: 50; } to { stroke-dashoffset: 0; } }
+  .animated-flow-path.highlight-active { stroke: #ff4500 !important; stroke-width: 6.5 !important; animation-duration: 1.5s !important; filter: drop-shadow(0 0 4px rgba(255,69,0,0.5)); opacity: 1 !important; }
+
+  .macro-clean-circle { background: #1A1814; color: #fff; border: 2px solid #fff; border-radius: 50%; width: 20px !important; height: 20px !important; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; box-shadow: 0 3px 8px rgba(0,0,0,0.15); }
   .loading-overlay { position: absolute; inset: 0; background: var(--surface); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
   .loading-overlay.active { opacity: 1; pointer-events: all; }
-  .loading-title { font-size: 22px; font-weight: 500; color: var(--ink); }
   .notif { position: fixed; bottom: 24px; right: 24px; background: var(--ink); color: var(--surface); padding: 12px 20px; border-radius: var(--radius-sm); font-size: 13px; z-index: 200; transform: translateY(20px); opacity: 0; transition: all 0.3s; }
   .notif.show { transform: translateY(0); opacity: 1; }
-  .notif.error { background: #B5451B; }
 </style>
 </head>
 <body>
@@ -125,32 +147,20 @@
       <div class="logo">
         <div class="logo-mark"><i class="ti ti-compass"></i></div>
         <div>
-          <div class="logo-name">Mapp<span>d</span></div>
-          <div class="tagline">大路线时序智能决策体系</div>
+          <div class="logo-name">Mappd</div>
+          <div class="tagline" style="font-size:11px; color:var(--ink3);">大路线时序智能决策体系</div>
         </div>
       </div>
     </div>
     
     <div class="input-section">
       <div class="input-row">
-        <div class="input-group">
-          <label class="input-label">出发城市</label>
-          <input class="input-field" id="start-point" type="text" value="成都">
-        </div>
-        <div class="input-group">
-          <label class="input-label">目的地群</label>
-          <input class="input-field" id="destination" type="text" value="西班牙、葡萄牙、亚速尔群岛">
-        </div>
+        <div class="input-group"><label class="input-label">出发城市</label><input class="input-field" id="start-point" type="text" value="成都"></div>
+        <div class="input-group"><label class="input-label">目的地群</label><input class="input-field" id="destination" type="text" value="西班牙、葡萄牙、亚速尔群岛"></div>
       </div>
       <div class="input-row">
-        <div class="input-group">
-          <label class="input-label">行程天数</label>
-          <input class="input-field" id="duration" type="number" value="10">
-        </div>
-        <div class="input-group">
-          <label class="input-label">旅行人数</label>
-          <input class="input-field" id="travelers" type="number" value="2">
-        </div>
+        <div class="input-group"><label class="input-label">行程天数</label><input class="input-field" id="duration" type="number" value="10"></div>
+        <div class="input-group"><label class="input-label">旅行人数</label><input class="input-field" id="travelers" type="number" value="2"></div>
       </div>
       <button class="gen-btn" id="gen-btn" onclick="generateOptions()">
         <div class="spinner"></div>
@@ -170,102 +180,120 @@
   
   <div class="map-container" id="right-map-area">
     <div class="map-placeholder" id="map-placeholder">
-      <svg class="sandbox-canvas" id="sandbox-canvas"></svg>
-      <div class="placeholder-astrolabe"><div class="placeholder-center-core"><i class="ti ti-windmill"></i></div></div>
-      <p style="margin-top:20px; font-size:13px; color:var(--ink2); font-weight:500;">时序沙盘流水轨迹将在此纯净流淌</p>
+      <div class="guide-title">智能规划助手</div>
+      <div class="guide-subtitle">一键规划，后续直接订票</div>
+      
+      <div class="astrolabe-wrapper">
+        <div class="astrolabe-orbit orbit-1"></div>
+        <div class="astrolabe-orbit orbit-2"></div>
+        <div class="astrolabe-center"><i class="ti ti-sparkles"></i></div>
+        
+        <div class="helper-bubble b-pos1"><i class="ti ti-user"></i><span class="b-title">智能理解</span><span class="b-desc">偏好 | 预算 | 约束</span></div>
+        <div class="helper-bubble b-pos2"><i class="ti ti-git-commit"></i><span class="b-title">一键规划</span><span class="b-desc">多方案生成 / 最优推荐</span></div>
+        <div class="helper-bubble b-pos3"><i class="ti ti-shield-check"></i><span class="b-title">安心出行</span><span class="b-desc">行程提醒 | 应急支持</span></div>
+        <div class="helper-bubble b-pos4"><i class="ti ti-refresh"></i><span class="b-title">实时优化</span><span class="b-desc">动态调整更优体验</span></div>
+      </div>
+      
+      <p style="font-size:13px; color:var(--ink2); font-weight:500; margin-bottom:20px;">时序沙盘流水轨迹将在此纯净流淌</p>
     </div>
+    
     <div id="map"></div>
+    
+    <div class="bottom-dock" style="left: 50%; transform: translateX(-50%);">
+      <div class="dock-item"><i class="ti ti-plane"></i> 机票</div>
+      <div class="dock-item"><i class="ti ti-building-skyscrapers"></i> 酒店</div>
+      <div class="dock-item"><i class="ti ti-train"></i> 火车票</div>
+      <div class="dock-item"><i class="ti ti-ticket"></i> 景点门票</div>
+      <div class="dock-item"><i class="ti ti-dots"></i> 更多服务</div>
+    </div>
+    
+    <div class="loading-overlay" id="loading-overlay">
+      <div class="loading-title">精算师正在构建宏观曲线时空沙盘...</div>
+    </div>
   </div>
 </div>
 <div class="notif" id="notif"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-let map = null, macroMarkers = [], polylineLayers = {}, globalOptions = [];
-const mapArea = document.getElementById('right-map-area');
-const canvas = document.getElementById('sandbox-canvas');
-
-function buildCanvasLines() {
-  let width = mapArea.clientWidth; let height = mapArea.clientHeight;
-  if(!width || !height) return;
-  canvas.setAttribute('viewBox', `0 0 ${width} ${height}`);
-  let html = '';
-  for(let i=0; i<width; i+=90){ html += `<line x1="${i}" y1="0" x2="${width - i}" y2="${height}" stroke="#1A1814" stroke-width="0.5" stroke-dasharray="4,8"/>`; }
-  canvas.innerHTML = html;
-}
-window.addEventListener('resize', buildCanvasLines); buildCanvasLines();
+let map = null, macroMarkers = [], curveSvgLayers = [], globalOptions = [];
 
 function showNotif(msg, isError = false) {
   const n = document.getElementById('notif'); if(!n) return;
-  n.textContent = msg; 
-  n.className = 'notif show' + (isError ? ' error' : '');
+  n.textContent = msg; n.className = 'notif show' + (isError ? ' error' : '');
   setTimeout(() => n.className = 'notif', 5000);
 }
 
-function initMacroMap(lat, lng, zoom) {
-  if (map) { map.remove(); map = null; }
-  const holder = document.getElementById('map-placeholder'); if(holder) holder.style.display = 'none';
-  map = L.map('map', { zoomControl: false, attributionControl: false }).setView([lat, lng], zoom);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 12 }).addTo(map);
+function initMacroMap() {
+  if (map) return;
+  document.getElementById('map-placeholder').style.display = 'none';
+  map = L.map('map', { zoomControl: false, attributionControl: false }).setView([38.8, -14.0], 5);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 10 }).addTo(map);
 }
 
 function clearMacroLayers() {
   macroMarkers.forEach(m => m?.remove()); macroMarkers = [];
-  Object.values(polylineLayers).forEach(l => l?.remove()); polylineLayers = {};
+  curveSvgLayers.forEach(l => l?.remove()); curveSvgLayers = [];
 }
 
-function drawMacroRoute(routeData, optionId) {
-  clearMacroLayers();
-  if(!routeData) return;
-  const centerLat = routeData.center_lat || 39.5;
-  const centerLng = routeData.center_lng || -8.0;
-  const zoomLevel = routeData.zoom_level || 5;
+// 💥 原型沉淀：通过自定义 Leaflet SVG 图层，精准计算两点二次贝塞尔控制点，拉开往返双曲线
+function drawCurveLine(fromLatLng, toLatLng, mode, optionId, flowIndex, isReturn = false) {
+  const isDrive = mode === 'drive';
+  const strokeColor = isDrive ? '#2D6A4F' : '#B5451B';
+  const dashPattern = isDrive ? '10, 8' : '3, 10';
 
-  if (!map) { initMacroMap(centerLat, centerLng, zoomLevel); } 
-  else { map.setView([centerLat, centerLng], zoomLevel); }
+  // 将地理坐标转化为图层像素坐标进行几何运算
+  const startP = map.latLngToLayerPoint(fromLatLng);
+  const endP = map.latLngToLayerPoint(toLatLng);
+  
+  const midX = (startP.x + endP.x) / 2;
+  const midY = (startP.y + endP.y) / 2;
+  
+  const dx = endP.x - startP.x;
+  const dy = endP.y - startP.y;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  if(len === 0) return;
 
-  // 🌟 核心重构：1:1 按索引生成地图线段层
-  if (routeData.segments && routeData.segments.length) {
-    routeData.segments.forEach((seg, sIdx) => {
-      if(!seg || !seg.coords || seg.coords.length < 2) return;
-      
-      // 如果起点和终点完全重合（比如大交通占位），则不需要在地图上连线
-      if(seg.coords[0][0] === seg.coords[1][0] && seg.coords[0][1] === seg.coords[1][1]) return;
+  // 弯曲弧度控制：去程和回程通过相反系数形成漂亮的“大括号”形分离
+  const offset = len * 0.16;
+  const nX = -dy / len;
+  const nY = dx / len;
+  
+  const controlX = midX + nX * (isReturn ? -offset : offset);
+  const controlY = midY + nY * (isReturn ? -offset : offset);
 
-      const isDrive = seg.mode === 'drive';
-      const lineColor = isDrive ? '#2D6A4F' : '#B5451B';
-      const lineDash = isDrive ? '12, 10' : '4, 12';
-      
-      const poly = L.polyline(seg.coords, {
-        color: lineColor, weight: 3.5, opacity: 0.7, dashArray: lineDash, className: 'animated-flow-line' 
-      }).addTo(map);
-      
-      const flowId = `opt-${optionId}-seg-${sIdx}`;
-      polylineLayers[flowId] = poly;
-    });
-  }
+  // 构建高精度 SVG 节点
+  const bounds = map.getBounds();
+  const svgNS = "http://www.w3.org/2000/svg";
+  const svgEl = document.createElementNS(svgNS, "svg");
+  const pathEl = document.createElementNS(svgNS, "path");
 
-  if (routeData.anchors && routeData.anchors.length) {
-    routeData.anchors.forEach((anchor, idx) => {
-      if(!anchor) return;
-      const cleanIcon = L.divIcon({ className: 'macro-clean-circle', html: `${idx + 1}`, iconSize: [16, 16], iconAnchor: [8, 8] });
-      const m = L.marker([anchor.lat, anchor.lng], { icon: cleanIcon }).addTo(map);
-      m.bindTooltip(`<div style="font-weight:600; font-size:12px; padding:1px 3px;">${idx+1}. ${anchor.name}</div>`, {
-        permanent: true, direction: 'top', offset: [0, -8]
-      });
-      macroMarkers.push(m);
-    });
-  }
+  pathEl.setAttribute('d', `M ${startP.x} ${startP.y} Q ${controlX} ${controlY} ${endP.x} ${endP.y}`);
+  pathEl.setAttribute('stroke', strokeColor);
+  pathEl.setAttribute('stroke-width', '3.5');
+  pathEl.setAttribute('opacity', '0.75');
+  pathEl.setAttribute('class', 'animated-flow-path');
+  pathEl.setAttribute('style', `stroke-dasharray: ${dashPattern};`);
+  pathEl.setAttribute('id', `curve-opt-${optionId}-flow-${flowIndex}`);
+
+  svgEl.appendChild(pathEl);
+
+  // 用一个透明占位覆盖层把纯代码 SVG 动态定格在地图上
+  const svgOverlay = L.svgOverlay(svgEl, [[-90, -180], [90, 180]]).addTo(map);
+  curveSvgLayers.push(svgOverlay);
 }
 
-function highlightMapSegment(optionId, segIndex, active) {
-  const targetId = `opt-${optionId}-seg-${segIndex}`;
-  const layer = polylineLayers[targetId];
-  if (!layer) return;
-  const el = layer.getElement();
+function highlightCurveSegment(optionId, flowIndex, active) {
+  const el = document.getElementById(`curve-opt-${optionId}-flow-${flowIndex}`);
+  const node = document.getElementById(`node-opt-${optionId}-flow-${flowIndex}`);
   if (!el) return;
-  if (active) { el.classList.add('highlight-active'); } 
-  else { el.classList.remove('highlight-active'); }
+  if (active) {
+    el.classList.add('highlight-active');
+    if(node) node.classList.add('focused-node');
+  } else {
+    el.classList.remove('highlight-active');
+    if(node) node.classList.remove('focused-node');
+  }
 }
 
 async function generateOptions() {
@@ -274,30 +302,25 @@ async function generateOptions() {
   const days = document.getElementById('duration').value;
   const travelers = document.getElementById('travelers').value;
 
-  const btn = document.getElementById('gen-btn'); 
-  if(btn) { btn.disabled = true; btn.classList.add('loading'); }
-  const overlay = document.getElementById('loading-overlay');
-  if(overlay) overlay.className = 'loading-overlay active';
+  const btn = document.getElementById('gen-btn'); if(btn) { btn.disabled = true; btn.classList.add('loading'); }
+  const overlay = document.getElementById('loading-overlay'); if(overlay) overlay.className = 'loading-overlay active';
 
   try {
     const res = await fetch('/api/plan_options', {
-      method: 'POST', 
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ start_point, destination, days, travelers })
     });
-
-    if (!res.ok) throw new Error(`服务器报错: ${res.status}`);
-
+    if (!res.ok) throw new Error(`服务端异常: ${res.status}`);
+    
     const data = await res.json();
-    if (!data || !data.options) throw new Error("大模型返回格式解析异常");
-
     globalOptions = data.options;
     renderOptionCards(data.options);
     const est = document.getElementById('empty-state'); if(est) est.style.display = 'none';
+    
+    initMacroMap();
     selectCard(0);
   } catch (e) {
     showNotif(e.message, true);
-    console.error(e);
   } finally {
     if(overlay) overlay.className = 'loading-overlay';
     if(btn) { btn.disabled = false; btn.classList.remove('loading'); }
@@ -327,11 +350,11 @@ function renderOptionCards(options) {
         </div>
       `;
 
-      // 🌟 终极优雅：没有任何多余算法，卡片索引是多少，直接去高亮地图上对应索引的专属线条！
+      // 💥 纯原型对齐：移入哪个卡片，就直接加粗加亮对应索引的那根专属曲线！
       return `
-        <div class="timeline-node node-flow-${flow.type}" 
-             onmouseenter="highlightMapSegment(${opt.option_id}, ${fIdx}, true)"
-             onmouseleave="highlightMapSegment(${opt.option_id}, ${fIdx}, false)">
+        <div class="timeline-node node-flow-${flow.type}" id="node-opt-${opt.option_id}-flow-${fIdx}"
+             onmouseenter="highlightCurveSegment(${opt.option_id}, ${fIdx}, true)"
+             onmouseleave="highlightCurveSegment(${opt.option_id}, ${fIdx}, false)">
           <div class="node-dot"></div>
           <div class="node-header">
             <span class="node-title">${flow.title || '行程节点'}</span>
@@ -375,12 +398,41 @@ function renderOptionCards(options) {
 
 function selectCard(idx) {
   document.querySelectorAll('.option-card').forEach(c => c.classList.remove('active'));
-  const targetCard = document.getElementById(`opt-card-${idx}`);
-  if(!targetCard) return;
+  const targetCard = document.getElementById(`opt-card-${idx}`); if(!targetCard) return;
   targetCard.classList.add('active');
-  if(globalOptions[idx] && globalOptions[idx].macro_route) {
-    drawMacroRoute(globalOptions[idx].macro_route, globalOptions[idx].option_id);
+  
+  const opt = globalOptions[idx];
+  if(!opt || !opt.macro_route) return;
+  
+  clearMacroLayers();
+  map.setView([opt.macro_route.center_lat || 39.5, opt.macro_route.center_lng || -8.0], opt.macro_route.zoom_level || 5);
+
+  // 绘制曲线
+  if(opt.macro_route.segments) {
+    opt.macro_route.segments.forEach((seg, sIdx) => {
+      if(!seg || !seg.coords || seg.coords.length < 2) return;
+      drawCurveLine(seg.coords[0], seg.coords[1], seg.mode, opt.option_id, sIdx, seg.is_return || false);
+    });
   }
+
+  // 绘制圆圈序号桩
+  if(opt.macro_route.anchors) {
+    opt.macro_route.anchors.forEach((anchor, aIdx) => {
+      const cleanIcon = L.divIcon({ className: 'macro-clean-circle', html: `${aIdx + 1}`, iconSize: [20, 20], iconAnchor: [10, 10] });
+      const m = L.marker(anchor.latlng, { icon: cleanIcon }).addTo(map);
+      m.bindTooltip(`<div style="font-weight:600; padding:1px 3px;">${aIdx+1}. ${anchor.name}</div>`, { permanent: true, direction: 'top', offset: [0, -10] });
+      macroMarkers.push(m);
+    });
+  }
+}
+
+// 重新建立动态监听，确保地图缩放时 SVG 贝塞尔曲线几何位置可以全自动自适应重绘
+window.addEventListener('resize', buildCanvasLines);
+if(map) {
+  map.on('zoomend moveend', () => {
+    const activeIdx = globalOptions.findIndex((_, idx) => document.getElementById(`opt-card-${idx}`)?.classList.contains('active'));
+    if(activeIdx !== -1) selectCard(activeIdx);
+  });
 }
 
 function lockThisOption(optionId, event) {
