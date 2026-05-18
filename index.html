@@ -60,11 +60,10 @@
   .fin-val { font-size: 19px; font-weight: 700; color: var(--accent2); }
   .option-card.active .fin-val { color: var(--accent); }
   
+  .detail-title { font-size: 12px; font-weight: 600; color: var(--ink); text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
   .timeline-container { position: relative; padding-left: 18px; border-left: 2px solid var(--border); margin-top: 14px; }
   .timeline-node { position: relative; margin-bottom: 20px; padding: 12px; background: var(--bg); border: 1px solid var(--border2); border-radius: 8px; transition: all 0.2s ease; }
   .option-card.active .timeline-node { background: #FDFBF7; }
-  
-  /* 💥 联动聚焦高亮状态 */
   .timeline-node.focused-node { border-color: var(--ink) !important; background: var(--surface2) !important; transform: translateX(2px); }
   
   .node-dot { position: absolute; left: -25px; top: 16px; width: 12px; height: 12px; border-radius: 50%; background: var(--surface2); border: 2px solid var(--ink3); }
@@ -88,7 +87,6 @@
   .empty-state { text-align: center; padding: 40px 0; color: var(--ink3); font-size: 13px; }
   .empty-state i { font-size: 32px; opacity: 0.4; display: block; margin-bottom: 8px; }
   
-  /* 地图及初始看板图设计 */
   .map-container { position: relative; background: #E8E2D5; height: 100vh; }
   #map { width: 100%; height: 100%; position: absolute; inset: 0; z-index: 1; background: #E8E2D5; }
   
@@ -126,11 +124,9 @@
   .dock-item:hover { color: var(--accent); }
   .dock-item i { font-size: 16px; }
   
-  /* 💥 SVG 曲线流向的基础 CSS 样式 */
   .animated-flow-path { fill: none; stroke-linecap: round; stroke-dasharray: 8, 8; animation: curve-ant-flow 5s linear infinite; transition: stroke 0.25s, stroke-width 0.25s, filter 0.25s; }
   @keyframes curve-ant-flow { from { stroke-dashoffset: 50; } to { stroke-dashoffset: 0; } }
   
-  /* 💥 激活联动时的强力高亮视觉渲染类 */
   .animated-flow-path.highlight-active { stroke: #ff4500 !important; stroke-width: 6.5 !important; animation-duration: 1.5s !important; filter: drop-shadow(0 0 5px rgba(255,69,0,0.6)); opacity: 1 !important; }
 
   .macro-clean-circle { background: #1A1814; color: #fff; border: 2px solid #fff; border-radius: 50%; width: 20px !important; height: 20px !important; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; box-shadow: 0 3px 8px rgba(0,0,0,0.15); }
@@ -219,7 +215,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 let map = null, macroMarkers = [], curveSvgLayers = [], globalOptions = [];
-let currentActiveSegments = []; // 全局缓存地理线条坐标资产
+let currentActiveSegments = []; 
 
 function showNotif(msg, isError = false) {
   const n = document.getElementById('notif'); if(!n) return;
@@ -230,10 +226,9 @@ function showNotif(msg, isError = false) {
 function initMacroMap() {
   if (map) return;
   document.getElementById('map-placeholder').style.display = 'none';
-  map = L.map('map', { zoomControl: false, attributionControl: false }).setView([38.8, -14.0], 5);
+  map = L.map('map', { zoomControl: false, attributionControl: false }).setView([39.5, -3.7], 5);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 10 }).addTo(map);
 
-  // 💥 严密监听底图的生命周期位移：每次缩放、拖拽，都会毫秒级强制重算更新 SVG
   map.on('zoomend moveend viewreset', () => {
     recalculateAllCurves();
   });
@@ -245,7 +240,15 @@ function clearMacroLayers() {
   currentActiveSegments = [];
 }
 
-// 💥 几何计算器：根据当前视窗的最优投影，计算出反向、带对称弧度的贝塞尔弯曲指令
+// 💥 严密排毒：强制对经纬度执行 parseFloat 强制类型清洗，杜绝 NaN 导致动线蒸发
+function cleanLatLng(coordArray) {
+  if (!coordArray || coordArray.length < 2) return null;
+  const lat = parseFloat(coordArray[0]);
+  const lng = parseFloat(coordArray[1]);
+  if (isNaN(lat) || isNaN(lng)) return null;
+  return L.latLng(lat, lng);
+}
+
 function computeSvgPathString(fromLatLng, toLatLng, isReturn) {
   const startP = map.latLngToLayerPoint(fromLatLng);
   const endP = map.latLngToLayerPoint(toLatLng);
@@ -259,18 +262,16 @@ function computeSvgPathString(fromLatLng, toLatLng, isReturn) {
   
   if (len === 0) return '';
 
-  const offset = len * 0.15; // 弯曲跨度系数
+  const offset = len * 0.14; 
   const nX = -dy / len;
   const nY = dx / len;
   
-  // 通过正负反转 offset，让去程向上挺，回程向下沉，拉开平行轨道
   const controlX = midX + nX * (isReturn ? -offset : offset);
   const controlY = midY + nY * (isReturn ? -offset : offset);
 
   return `M ${startP.x} ${startP.y} Q ${controlX} ${controlY} ${endP.x} ${endP.y}`;
 }
 
-// 💥 SVG 大管家：统一用固定的全球投影层进行渲染，彻底杜绝图层“随风飘散”的宿疾
 function renderCurvesOnMap(segments, optionId) {
   curveSvgLayers.forEach(l => l?.remove());
   curveSvgLayers = [];
@@ -283,9 +284,14 @@ function renderCurvesOnMap(segments, optionId) {
 
   segments.forEach((seg, sIdx) => {
     if (!seg || !seg.coords || seg.coords.length < 2) return;
-    if (seg.coords[0][0] === seg.coords[1][0] && seg.coords[0][1] === seg.coords[1][1]) return;
+    
+    // 注入数据清洗锁
+    const startLoc = cleanLatLng(seg.coords[0]);
+    const endLoc = cleanLatLng(seg.coords[1]);
+    if (!startLoc || !endLoc) return;
+    if (startLoc.lat === endLoc.lat && startLoc.lng === endLoc.lng) return;
 
-    const pathString = computeSvgPathString(seg.coords[0], seg.coords[1], seg.is_return);
+    const pathString = computeSvgPathString(startLoc, endLoc, seg.is_return || false);
     if (!pathString) return;
 
     const pathEl = document.createElementNS(svgNS, "path");
@@ -303,7 +309,6 @@ function renderCurvesOnMap(segments, optionId) {
     svgEl.appendChild(pathEl);
   });
 
-  // 锁死全球边界，使像素坐标系与 Leaflet 完全熔断一体
   const svgOverlay = L.svgOverlay(svgEl, [[-90, -180], [90, 180]]).addTo(map);
   curveSvgLayers.push(svgOverlay);
 }
@@ -311,12 +316,9 @@ function renderCurvesOnMap(segments, optionId) {
 function recalculateAllCurves() {
   const activeCard = document.querySelector('.option-card.active');
   if (!activeCard || currentActiveSegments.length === 0) return;
-  
   const idx = parseInt(activeCard.id.replace('opt-card-', ''));
   const opt = globalOptions[idx];
-  if (opt) {
-    renderCurvesOnMap(currentActiveSegments, opt.option_id);
-  }
+  if (opt) renderCurvesOnMap(currentActiveSegments, opt.option_id);
 }
 
 function highlightCurveSegment(optionId, flowIndex, active) {
@@ -375,10 +377,10 @@ function renderOptionCards(options) {
       let isDrive = flow.type === 'drive';
       let metaHtml = isDrive ? `
         <div class="node-meta-grid">
-          <div>🔑 <b>取车:</b> ${flow.meta_json?.pickup || '机场门店'}</div>
-          <div>🏁 <b>还车:</b> ${flow.meta_json?.dropoff || '机场门店'}</div>
-          <div>📏 <b>里程:</b> ${flow.meta_json?.distance || '计算中'}</div>
-          <div style="color:var(--accent); font-weight:600;">⏱️ <b>纯驾车:</b> ${flow.meta_json?.drive_hours || '计算中'}</div>
+          <div>🔑 <b>取车:</b> ${flow.meta_json?.pickup || '城市枢纽'}</div>
+          <div>🏁 <b>还车:</b> ${flow.meta_json?.dropoff || '城市枢纽'}</div>
+          <div>📏 <b>里程:</b> ${flow.meta_json?.distance || '测算中'}</div>
+          <div style="color:var(--accent); font-weight:600;">⏱️ <b>纯驾车:</b> ${flow.meta_json?.drive_hours || '测算中'}</div>
         </div>
       ` : `
         <div class="node-meta-grid" style="grid-template-columns:1fr;">
@@ -441,24 +443,27 @@ function selectCard(idx) {
   
   clearMacroLayers();
   
-  // 注入全量图层线段资产到重绘缓存中
   if(opt.macro_route.segments) {
     currentActiveSegments = opt.macro_route.segments;
   }
   
-  map.setView([opt.macro_route.center_lat || 39.5, opt.macro_route.center_lng || -8.0], opt.macro_route.zoom_level || 5);
+  map.setView([opt.macro_route.center_lat || 39.5, opt.macro_route.center_lng || -3.7], opt.macro_route.zoom_level || 5);
 
-  // 绘制大节点序号小圈
   if(opt.macro_route.anchors) {
     opt.macro_route.anchors.forEach((anchor, aIdx) => {
+      if(!anchor || !anchor.latlng) return;
       const cleanIcon = L.divIcon({ className: 'macro-clean-circle', html: `${aIdx + 1}`, iconSize: [20, 20], iconAnchor: [10, 10] });
-      const m = L.marker(anchor.latlng, { icon: cleanIcon }).addTo(map);
+      
+      // 锚点同样执行安全清洗保护
+      const validPoint = cleanLatLng(anchor.latlng);
+      if(!validPoint) return;
+
+      const m = L.marker(validPoint, { icon: cleanIcon }).addTo(map);
       m.bindTooltip(`<div style="font-weight:600; padding:1px 3px;">${aIdx+1}. ${anchor.name}</div>`, { permanent: true, direction: 'top', offset: [0, -10] });
       macroMarkers.push(m);
     });
   }
 
-  // 触发首刷渲染
   renderCurvesOnMap(currentActiveSegments, opt.option_id);
 }
 
