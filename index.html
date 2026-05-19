@@ -64,7 +64,7 @@
   .timeline-container { position: relative; padding-left: 18px; border-left: 2px solid var(--border); margin-top: 14px; }
   .timeline-node { position: relative; margin-bottom: 20px; padding: 12px; background: var(--bg); border: 1px solid var(--border2); border-radius: 8px; transition: all 0.2s ease; }
   .option-card.active .timeline-node { background: #FDFBF7; }
-  .timeline-node.focused-node { border-color: var(--ink) !important; background: var(--surface2) !important; transform: translateX(2px); }
+  .timeline-node.focused-node { border-color: var(--ink) !important; background: var(--surface2) !important; transform: translateX(2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
   
   .node-dot { position: absolute; left: -25px; top: 16px; width: 12px; height: 12px; border-radius: 50%; background: var(--surface2); border: 2px solid var(--ink3); }
   .node-flow-flight .node-dot { border-color: var(--accent2); }
@@ -124,12 +124,7 @@
   .dock-item:hover { color: var(--accent); }
   .dock-item i { font-size: 16px; }
   
-  .animated-flow-path { fill: none; stroke-linecap: round; stroke-dasharray: 8, 8; animation: curve-ant-flow 5s linear infinite; transition: stroke 0.25s, stroke-width 0.25s, filter 0.25s; }
-  @keyframes curve-ant-flow { from { stroke-dashoffset: 50; } to { stroke-dashoffset: 0; } }
-  
-  .animated-flow-path.highlight-active { stroke: #ff4500 !important; stroke-width: 6.5 !important; animation-duration: 1.5s !important; filter: drop-shadow(0 0 5px rgba(255,69,0,0.6)); opacity: 1 !important; }
-
-  .macro-clean-circle { background: #1A1814; color: #fff; border: 2px solid #fff; border-radius: 50%; width: 20px !important; height: 20px !important; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; box-shadow: 0 3px 8px rgba(0,0,0,0.15); }
+  .macro-clean-circle { background: #1A1814; color: #fff; border: 2px solid #fff; border-radius: 50%; width: 22px !important; height: 22px !important; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; box-shadow: 0 3px 8px rgba(0,0,0,0.2); }
   .loading-overlay { position: absolute; inset: 0; background: var(--surface); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
   .loading-overlay.active { opacity: 1; pointer-events: all; }
   .loading-title { font-size: 22px; font-weight: 500; color: var(--ink); }
@@ -154,7 +149,7 @@
     <div class="input-section">
       <div class="input-row">
         <div class="input-group"><label class="input-label">出发城市</label><input class="input-field" id="start-point" type="text" value="成都"></div>
-        <div class="input-group"><label class="input-label">目的地群</label><input class="input-field" id="destination" type="text" value="西班牙、葡萄牙、亚速尔群岛"></div>
+        <div class="input-group"><label class="input-label">目的地群</label><input class="input-field" id="destination" type="text" value="西班牙"></div>
       </div>
       <div class="input-row">
         <div class="input-group"><label class="input-label">行程天数</label><input class="input-field" id="duration" type="number" value="10"></div>
@@ -214,8 +209,10 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-let map = null, macroMarkers = [], curveSvgLayers = [], globalOptions = [];
-let currentActiveSegments = []; 
+let map = null;
+let macroMarkers = [];
+let macroLines = []; // 存储原生的地理 Polyline 图层组
+let globalOptions = [];
 
 function showNotif(msg, isError = false) {
   const n = document.getElementById('notif'); if(!n) return;
@@ -227,20 +224,15 @@ function initMacroMap() {
   if (map) return;
   document.getElementById('map-placeholder').style.display = 'none';
   map = L.map('map', { zoomControl: false, attributionControl: false }).setView([39.5, -3.7], 5);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 10 }).addTo(map);
-
-  map.on('zoomend moveend viewreset', () => {
-    recalculateAllCurves();
-  });
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 18 }).addTo(map);
 }
 
 function clearMacroLayers() {
   macroMarkers.forEach(m => m?.remove()); macroMarkers = [];
-  curveSvgLayers.forEach(l => l?.remove()); curveSvgLayers = [];
-  currentActiveSegments = [];
+  macroLines.forEach(l => l?.remove()); macroLines = [];
 }
 
-// 💥 严密排毒：强制对经纬度执行 parseFloat 强制类型清洗，杜绝 NaN 导致动线蒸发
+// 💥 强制执行安全转换为浮点数经纬度
 function cleanLatLng(coordArray) {
   if (!coordArray || coordArray.length < 2) return null;
   const lat = parseFloat(coordArray[0]);
@@ -249,89 +241,107 @@ function cleanLatLng(coordArray) {
   return L.latLng(lat, lng);
 }
 
-function computeSvgPathString(fromLatLng, toLatLng, isReturn) {
-  const startP = map.latLngToLayerPoint(fromLatLng);
-  const endP = map.latLngToLayerPoint(toLatLng);
+// ✨ 高阶创新：在纯地理空间（经纬度世界）插值计算 15 个贝塞尔点，生成真正原生抗缩放的完美空间地理曲线上皮
+function generateGeodesicBezierPoints(fromLatLng, toLatLng, isReturn) {
+  const points = [];
+  const steps = 15;
   
-  const midX = (startP.x + endP.x) / 2;
-  const midY = (startP.y + endP.y) / 2;
+  // 计算地理几何中点
+  const midLat = (fromLatLng.lat + toLatLng.lat) / 2;
+  const midLng = (fromLatLng.lng + toLatLng.lng) / 2;
   
-  const dx = endP.x - startP.x;
-  const dy = endP.y - startP.y;
-  const len = Math.sqrt(dx * dx + dy * dy);
+  // 计算法线偏移矢量
+  const dLat = toLatLng.lat - fromLatLng.lat;
+  const dLng = toLatLng.lng - fromLatLng.lng;
+  const dist = Math.sqrt(dLat * dLat + dLng * dLng);
   
-  if (len === 0) return '';
+  if (dist === 0) return [fromLatLng];
 
-  const offset = len * 0.14; 
-  const nX = -dy / len;
-  const nY = dx / len;
+  const offsetMagnitude = dist * 0.15; // 弯曲系数
+  const nLat = -dLng / dist;
+  const nLng = dLat / dist;
   
-  const controlX = midX + nX * (isReturn ? -offset : offset);
-  const controlY = midY + nY * (isReturn ? -offset : offset);
+  // 计算地理维度的控制点
+  const controlLat = midLat + nLat * (isReturn ? -offsetMagnitude : offsetMagnitude);
+  const controlLng = midLng + nLng * (isReturn ? -offsetMagnitude : offsetMagnitude);
 
-  return `M ${startP.x} ${startP.y} Q ${controlX} ${controlY} ${endP.x} ${endP.y}`;
+  // 二次贝塞尔曲线地理级数学插值
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const currLat = (1 - t) * (1 - t) * fromLatLng.lat + 2 * (1 - t) * t * controlLat + t * t * toLatLng.lat;
+    const currLng = (1 - t) * (1 - t) * fromLatLng.lng + 2 * (1 - t) * t * controlLng + t * t * toLatLng.lng;
+    points.push([currLat, currLng]);
+  }
+  return points;
 }
 
 function renderCurvesOnMap(segments, optionId) {
-  curveSvgLayers.forEach(l => l?.remove());
-  curveSvgLayers = [];
+  macroLines.forEach(l => l?.remove());
+  macroLines = [];
   
   if (!segments || segments.length === 0) return;
-
-  const svgNS = "http://www.w3.org/2000/svg";
-  const svgEl = document.createElementNS(svgNS, "svg");
-  svgEl.setAttribute('style', 'position: absolute; pointer-events: none; width: 100%; height: 100%;');
 
   segments.forEach((seg, sIdx) => {
     if (!seg || !seg.coords || seg.coords.length < 2) return;
     
-    // 注入数据清洗锁
     const startLoc = cleanLatLng(seg.coords[0]);
     const endLoc = cleanLatLng(seg.coords[1]);
     if (!startLoc || !endLoc) return;
-    if (startLoc.lat === endLoc.lat && startLoc.lng === endLoc.lng) return;
+    if (startLoc.lat === endLoc.lat && startLoc.lng === endLoc.lng) return; // 忽略同点大交通
 
-    const pathString = computeSvgPathString(startLoc, endLoc, seg.is_return || false);
-    if (!pathString) return;
-
-    const pathEl = document.createElementNS(svgNS, "path");
+    // 获取纯地理空间的曲线点数组
+    const curvePoints = generateGeodesicBezierPoints(startLoc, endLoc, seg.is_return || false);
     const isDrive = seg.mode === 'drive';
-    
-    pathEl.setAttribute('d', pathString);
-    pathEl.setAttribute('stroke', isDrive ? '#4A5B4E' : '#B56545');
-    pathEl.setAttribute('stroke-width', '3.5');
-    pathEl.setAttribute('fill', 'none');
-    pathEl.setAttribute('opacity', '0.75');
-    pathEl.setAttribute('class', 'animated-flow-path');
-    pathEl.setAttribute('style', `stroke-dasharray: ${isDrive ? '10, 8' : '3, 10'};`);
-    pathEl.setAttribute('id', `curve-opt-${optionId}-flow-${sIdx}`);
 
-    svgEl.appendChild(pathEl);
+    // 🏆 直接创建原生的 Leaflet Polyline，底层绝对抗变形和全自动重绘
+    const polyline = L.polyline(curvePoints, {
+      color: isDrive ? '#4A5B4E' : '#B56545',
+      weight: 3.5,
+      opacity: 0.8,
+      dashArray: isDrive ? '8, 6' : '2, 6',
+      lineCap: 'round'
+    }).addTo(map);
+
+    // 将 DOM 对应的引用标识塞入 Polyline 的 options 中，方便 Hover 联动
+    polyline.options.flowId = `line-opt-${optionId}-flow-${sIdx}`;
+    macroLines.push(polyline);
   });
-
-  const svgOverlay = L.svgOverlay(svgEl, [[-90, -180], [90, 180]]).addTo(map);
-  curveSvgLayers.push(svgOverlay);
-}
-
-function recalculateAllCurves() {
-  const activeCard = document.querySelector('.option-card.active');
-  if (!activeCard || currentActiveSegments.length === 0) return;
-  const idx = parseInt(activeCard.id.replace('opt-card-', ''));
-  const opt = globalOptions[idx];
-  if (opt) renderCurvesOnMap(currentActiveSegments, opt.option_id);
 }
 
 function highlightCurveSegment(optionId, flowIndex, active) {
-  const el = document.getElementById(`curve-opt-${optionId}-flow-${flowIndex}`);
+  // 联动高频卡片
   const node = document.getElementById(`node-opt-${optionId}-flow-${flowIndex}`);
-  if (!el) return;
   if (active) {
-    el.classList.add('highlight-active');
     if(node) node.classList.add('focused-node');
   } else {
-    el.classList.remove('highlight-active');
     if(node) node.classList.remove('focused-node');
   }
+
+  // 联动 Leaflet 原生 Polyline
+  const targetFlowId = `line-opt-${optionId}-flow-${flowIndex}`;
+  macroLines.forEach(line => {
+    if (line.options.flowId === targetFlowId) {
+      if (active) {
+        line.setStyle({ color: '#ff4500', weight: 6, opacity: 1, dashArray: null });
+        line.bringToFront();
+      } else {
+        const isDrive = line.options.flowId.includes('drive'); // 轻微模糊检测或直接从原属判定
+        // 获取当前方案对应的原始线段样式进行还原
+        const activeCard = document.querySelector('.option-card.active');
+        const idx = parseInt(activeCard.id.replace('opt-card-', ''));
+        const opt = globalOptions[idx];
+        const origSeg = opt.macro_route.segments[flowIndex];
+        const origIsDrive = origSeg ? origSeg.mode === 'drive' : true;
+        
+        line.setStyle({
+          color: origIsDrive ? '#4A5B4E' : '#B56545',
+          weight: 3.5,
+          opacity: 0.8,
+          dashArray: origIsDrive ? '8, 6' : '2, 6'
+        });
+      }
+    }
+  });
 }
 
 async function generateOptions() {
@@ -352,10 +362,13 @@ async function generateOptions() {
     
     const data = await res.json();
     globalOptions = data.options;
+    
+    // 🔥 【核心修复】: 调整完美的生命周期，必须先初始化并撑开底图，再去加载卡片及打点画线！
+    initMacroMap();
+    
     renderOptionCards(data.options);
     const est = document.getElementById('empty-state'); if(est) est.style.display = 'none';
     
-    initMacroMap();
     selectCard(0);
   } catch (e) {
     showNotif(e.message, true);
@@ -443,28 +456,28 @@ function selectCard(idx) {
   
   clearMacroLayers();
   
-  if(opt.macro_route.segments) {
-    currentActiveSegments = opt.macro_route.segments;
-  }
-  
+  // 设置宏观视口中心和缩放
   map.setView([opt.macro_route.center_lat || 39.5, opt.macro_route.center_lng || -3.7], opt.macro_route.zoom_level || 5);
 
+  // 渲染城市锚点
   if(opt.macro_route.anchors) {
     opt.macro_route.anchors.forEach((anchor, aIdx) => {
       if(!anchor || !anchor.latlng) return;
-      const cleanIcon = L.divIcon({ className: 'macro-clean-circle', html: `${aIdx + 1}`, iconSize: [20, 20], iconAnchor: [10, 10] });
+      const cleanIcon = L.divIcon({ className: 'macro-clean-circle', html: `${aIdx + 1}`, iconSize: [22, 22], iconAnchor: [11, 11] });
       
-      // 锚点同样执行安全清洗保护
       const validPoint = cleanLatLng(anchor.latlng);
       if(!validPoint) return;
 
       const m = L.marker(validPoint, { icon: cleanIcon }).addTo(map);
-      m.bindTooltip(`<div style="font-weight:600; padding:1px 3px;">${aIdx+1}. ${anchor.name}</div>`, { permanent: true, direction: 'top', offset: [0, -10] });
+      m.bindTooltip(`<div style="font-weight:600; padding:1px 3px; font-size:12px;">${aIdx+1}. ${anchor.name}</div>`, { permanent: true, direction: 'top', offset: [0, -12] });
       macroMarkers.push(m);
     });
   }
 
-  renderCurvesOnMap(currentActiveSegments, opt.option_id);
+  // 渲染高韧性原生 Polyline 动线
+  if(opt.macro_route.segments) {
+    renderCurvesOnMap(opt.macro_route.segments, opt.option_id);
+  }
 }
 
 function lockThisOption(optionId, event) {
