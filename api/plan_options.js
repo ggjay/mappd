@@ -1,4 +1,5 @@
 export default async function handler(req, res) {
+  // 注入全量跨域安全头
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -9,60 +10,87 @@ export default async function handler(req, res) {
   try {
     let body = req.body;
     if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) {} }
-    const { start_point, destination, days, travelers } = body;
+    
+    // 💥 严密解构前端组件 A 派发过来的全新参数
+    const { start_point, destination, days, travelers, hasDrive, hasTrain } = body;
 
     const apiKey = process.env.DEEPSEEK_API_KEY; 
     if (!apiKey) return res.status(200).json({ error: "API KEY Missing" });
 
-    // 💥 完美动态化 Prompt：移除死死锁定的亚速尔，完全根据用户的 destination 智能生成
-    const prompt = `你是一个骨灰级的跨国长途自驾规划专家与全栈行程精算师。
-    当前用户定制需求：出发地【${start_point}】，具体目的地群【${destination}】，总行程天数【${days}】天，出行人数【${travelers}】人。
+    // 💥 终极精算师提示词：消灭一切硬编码，完全动态针对 ${destination} 泛化推演
+    const prompt = `你是一个专门为极致追求掌控感、消灭不确定性的 J人自由行打造的大路线骨架时序精算大模型。
     
-    请针对用户的目的地定制设计【2种】具有本质路线逻辑差异的宏观长途交通、住宿与路线骨架方案（必须完全围绕 ${destination} 展开，严禁胡乱拼凑其他无关城市）。
-    你必须【仅仅】返回一个标准的纯净 JSON 对象，严禁包含任何 \`\`\`json 格式代码块包装，严禁带有前言和后缀废话。
+    【当下核心输入红线】
+    - 出发城市：【${start_point}】
+    - 目的地城市群/国家：【${destination}】
+    - 总行程天数约束：【${days}】天（必须严格无缝覆盖，不准多一天或少一天！）
+    - 旅行人数分摊基数：【${travelers}】人
+    - 用户首选偏好倾向标签：自驾偏好=${hasDrive}，轨道交通偏好=${hasTrain}
 
-    【极其严格的 1:1 时序闭环映射红线】：
-    1. timeline_flows 数组代表左侧按时间顺序平铺的步骤卡片，必须严密覆盖从 Day 1 到 Day ${days} 的全部天数，绝对不准留白或中途断流！
-    2. macro_route.segments 代表右侧地图上的空间几何流线，其【线段数量、前后顺序】必须与 timeline_flows 中的步骤卡片【百分之百完全 1:1 镜像对齐】！
-    3. 如果是行程中的“回程”、“倒流”或“归航”航段，segments 中对应线段的 "is_return" 必须设为 true，且 coords 中的起终点坐标要写成反向，从而让地图上的蚂蚁线完美的往返反向流动！
-    4. 如果是始发地的洲际大飞机（例如成都飞往欧洲），在 segments 中可以将 coords 的起点与终点设为完全相同的值（例如 [[40.4, -3.7], [40.4, -3.7]]），前端会自动忽略这段原地多余连线。
-    5. 所有的地理坐标坐标点，必须全部采用严格的浮点数二维数组，例如：[40.4168, -3.7038]，绝对不准返回字符串或字典对象！
+    请针对目的地【${destination}】定制精算生成【两种】具有强烈对比和决策参考价值的宏观大路线时序方案。
+    
+    【沙盘对照组推荐策略（极其重要）】：
+    - 方案一：必须【百分之百严格顺从】用户的首选倾向标签（例如若自驾偏好为true，则必须出该目的地的纯自驾/租车大循环路线）。
+    - 方案二：必须作为【前瞻性对照组方案】。即使解除了自驾，也要在方案二中主动推演包含自驾、跨城通勤等更具时序效率的混合交通组合，给规划者提供无死角利弊对比。
 
-    格式规范如下：
+    【1:1 时序闭环映射红线】
+    1. timeline_flows 数组中的步骤卡片数量，必须与 macro_route.segments 数组中的几何线段数量【严格 1:1 顺序对齐】。
+    2. timeline_flows 里的 days_range 必须严格从 Day 1 递增排满到 Day ${days}，不准跳天，不准留白断流。
+    3. 如果是回程、倒流、归航段，segments 中对应线段的 is_return 必须设为 true，且 coords 内部起终点坐标需要和去程反向，以便让蚂蚁线反方向倒流。
+    4. 国际大交通段（如从 ${start_point} 飞往洲际目的地），在 segments 中可将 coords 起点终点设为相同坐标（如 [[40.0, -100.0], [40.0, -100.0]]），前端会自动处理文字而不画出冗余连线。
+    5. 所有的地理坐标点坐标，必须全部采用严格的 [纬度, 经度] 浮点数二维数组，例如美国纽约 [40.7128, -74.0060]，禁止返回字符串或对象。
+
+    请直接返回一个标准的纯净 JSON 对象，严禁包含任何 \`\`\`json 格式标记，严禁带有前言后缀：
     {
-      "summary": "${start_point}至${destination}时序沙盘演练",
+      "summary": "${start_point}至${destination}大路线时序对照演盘",
       "options": [
         {
           "option_id": 1,
-          "option_name": "结合目的地具体生成的方案一名称（如：半岛自驾纵贯线）",
-          "logic_desc": "一句话深度概括本路线的成本与时序咬合逻辑。",
-          "total_group_cost": "￥28000",
-          "cost_per_person": "￥14000",
+          "option_name": "结合 ${destination} 动态生成的方案一名称（如：美西国家公园自驾大环线）",
+          "logic_desc": "一句话深度阐明此方案如何闭合用户给出的原始偏好倾向。",
+          "total_group_cost": "￥团队总开销",
+          "cost_per_person": "￥人均分摊开销",
           "timeline_flows": [
             {
               "days_range": "Day 1",
-              "type": "flight",
-              "title": "大交通节点名称",
-              "detail_title": "具体始发地 ✈️ 境内主枢纽城市",
-              "time_window": "时间段描述",
+              "type": "flight", // flight 或 drive 或 train
+              "title": "航段/交通主题名称",
+              "detail_title": "${start_point} ✈️ 目标城市机场",
+              "time_window": "参考时间窗口（如: 12:00 - 18:30）",
               "duration_desc": "耗时描述",
-              "cost_info": "开销分摊描述",
+              "cost_info": "预算分摊说明",
               "meta_json": { "pickup": "无", "dropoff": "无", "distance": "无", "drive_hours": "无" },
-              "note": "时序落地提醒。"
+              "note": "对J人至关重要的转机/过关防踩坑指南。"
+            },
+            {
+              "days_range": "Day 2 - Day 4",
+              "type": "drive",
+              "title": "大路线区域级通勤",
+              "detail_title": "城市A取车 🚗 途径点 🚗 城市B还车",
+              "time_window": "节点交接时段",
+              "duration_desc": "累计驾驶耗时",
+              "cost_info": "预估车务花销",
+              "meta_json": {
+                "pickup": "精准推荐的取车门店（如洛杉矶机场店）",
+                "dropoff": "精准推荐的还车门店",
+                "distance": "全程约 XXX 公里",
+                "drive_hours": "每日平均驾驶时长"
+              },
+              "note": "跨境/跨州车务防坑、电子路税、燃油政策高亮白皮书。"
             }
           ],
           "accommodation_summary": [
-            {"city": "城市名称", "nights": 2, "avg_price": "￥900", "total": "￥1800"}
+            {"city": "留宿城市", "nights": 3, "avg_price": "￥均价", "total": "￥小计"}
           ],
           "macro_route": {
-            "center_lat": 39.5, 
-            "center_lng": -3.7, 
-            "zoom_level": 6,
+            "center_lat": 目的地的中心纬度浮点数,
+            "center_lng": 目的地的中心经度浮点数,
+            "zoom_level": 4, // 适合展现该目的地全景的 Leaflet 缩放级别 (通常 4-6)
             "anchors": [
-              {"name": "枢纽城市A", "latlng": [40.4168, -3.7038]}
+              {"name": "主要枢纽点城市名", "latlng": [纬度浮点数, 经度浮点数]}
             ],
             "segments": [
-              { "mode": "flight", "is_return": false, "coords": [[40.4168, -3.7038], [40.4168, -3.7038]] }
+              { "mode": "flight", "is_return": false, "coords": [[纬度, 经度], [纬度, 经度]] }
             ]
           }
         }
