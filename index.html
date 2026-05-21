@@ -19,8 +19,9 @@
     --font-body: 'DM Sans', system-ui, sans-serif;
   }
   html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 14px; line-height: 1.6; }
-  .app { display: grid; grid-template-columns: 460px 1fr; height: 100vh; overflow: hidden; }
+  .app { display: grid; grid-template-columns: 480px 1fr; height: 100vh; overflow: hidden; }
   
+  /* 左侧全面升级为精算大盘指挥部 */
   .panel { background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
   .panel-header { padding: 24px 24px 0; flex-shrink: 0; }
   .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
@@ -46,27 +47,32 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   
   .divider { height: 1px; background: var(--border2); margin: 0 24px; flex-shrink: 0; }
-  .results-scroll { flex: 1; overflow-y: auto; padding: 20px 24px 24px; }
   
-  /* 💥 优化版卡片：高调展示策略标签与精算指标 */
-  .option-card { background: var(--bg); border: 2px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 18px; cursor: pointer; transition: all 0.25s ease; position: relative; }
-  .option-card.active { border-color: var(--accent); background: #fff; box-shadow: 0 6px 24px rgba(74,91,78,0.06); }
-  
-  .strategy-badge { position: absolute; right: 18px; top: 18px; background: var(--accent2); color: #fff; font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: 600; }
-  .option-card.active .strategy-badge { background: var(--accent); }
+  /* 滚动舱结构优化 */
+  .results-scroll { flex: 1; overflow-y: auto; padding: 20px 24px 24px; scroll-behavior: smooth; }
+  .results-scroll::-webkit-scrollbar { width: 4px; }
+  .results-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-  .j-matrix-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin: 10px 0; text-align: center; }
-  .matrix-item { background: rgba(0,0,0,0.02); padding: 6px; border-radius: 6px; }
-  .matrix-label { font-size: 10px; color: var(--ink3); text-transform: uppercase; }
-  .matrix-val { font-size: 12px; font-weight: 600; color: var(--ink); margin-top: 1px; }
-
-  .finance-block { display: flex; gap: 16px; background: rgba(26,24,20,0.03); padding: 10px 12px; border-radius: var(--radius-sm); margin-bottom: 12px; }
-  .fin-item { flex: 1; }
-  .fin-label { font-size: 10px; color: var(--ink3); }
-  .fin-val { font-size: 18px; font-weight: 700; color: var(--accent2); }
-  .option-card.active .fin-val { color: var(--accent); }
+  /* 💥 贴合全新规划书的高端 UI 组件样式 */
+  .plan-manifest-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); }
+  .manifest-headline { font-family: 'DM Serif Display', serif; font-size: 20px; font-weight: 600; color: var(--ink); line-height: 1.3; margin-bottom: 10px; }
   
-  .lock-btn { width: 100%; padding: 11px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; margin-top: 12px; cursor: pointer; text-align: center; }
+  .tag-capsule-container { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .tag-capsule { background: var(--bg); color: var(--ink2); font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  
+  .logic-callout-box { background: rgba(181,101,69,0.04); border-left: 3px solid var(--accent2); padding: 12px; border-radius: 0 8px 8px 0; font-size: 12px; color: var(--ink); line-height: 1.5; margin-bottom: 18px; }
+  .section-subtitle { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--ink3); letter-spacing: 0.8px; margin-bottom: 8px; margin-top: 16px; display: flex; align-items: center; gap: 6px; }
+  
+  .node-timeline-item { background: var(--bg); border: 1px solid var(--border2); padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+  .node-city { font-weight: 600; font-size: 13px; color: var(--ink); }
+  .node-nights { background: var(--ink); color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 10px; font-weight: 700; }
+
+  .finance-精算-table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 12px; }
+  .finance-精算-table td { padding: 6px 0; border-bottom: 1px dashed var(--border2); }
+  .finance-price-val { text-align: right; font-weight: 600; color: var(--accent); }
+
+  .season-alert-banner { background: #FFF5F5; border: 1px solid #FEB2B2; color: #C53030; padding: 10px 14px; border-radius: 8px; font-size: 11px; line-height: 1.4; margin-top: 14px; font-weight: 500; }
+
   .empty-state { text-align: center; padding: 60px 0; color: var(--ink3); font-size: 14px; }
   .empty-state h3 { font-size: 18px; color: var(--ink); margin-bottom: 6px; font-weight: 600; }
   
@@ -74,52 +80,35 @@
   .map-container { position: relative; background: #E8E2D5; height: 100vh; }
   #map { width: 100%; height: 100%; position: absolute; inset: 0; z-index: 1; background: #E8E2D5; }
   
+  /* 地图上方的业务分类决策Tab轴 */
   .map-top-navigation-bar { 
     position: absolute; top: 20px; left: 20px; right: 20px; 
     background: #fff; border: 1px solid var(--border); padding: 6px; 
     border-radius: var(--radius); z-index: 10; box-shadow: 0 8px 24px rgba(0,0,0,0.06);
-    display: flex; gap: 6px; overflow-x: auto; scroll-behavior: smooth;
+    display: flex; gap: 6px; overflow-x: auto;
   }
-  .map-top-navigation-bar::-webkit-scrollbar { height: 2px; }
   .map-nav-tab { padding: 8px 16px; font-size: 12px; font-weight: 600; color: var(--ink2); border-radius: 6px; cursor: pointer; white-space: nowrap; transition: all 0.2s; background: var(--bg); }
   .map-nav-tab.active { background: var(--ink); color: #fff; }
   
+  /* 右侧内嵌的浮动高频明细账本舱 */
   .map-floating-micro-pane {
-    position: absolute; top: 85px; right: 20px; width: 340px; max-height: calc(100vh - 170px);
+    position: absolute; top: 85px; right: 20px; width: 350px; max-height: calc(100vh - 170px);
     background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
     z-index: 10; box-shadow: 0 10px 30px rgba(0,0,0,0.08); padding: 16px;
     display: none; flex-direction: column; overflow-y: auto;
   }
   .map-floating-micro-pane.active { display: flex; }
-  .micro-pane-title { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border2); padding-bottom: 8px; }
-  
-  .micro-spot-card { background: var(--bg); border: 1px solid var(--border2); padding: 12px; border-radius: 8px; margin-bottom: 12px; position: relative; }
-  .micro-spot-tag { position: absolute; right: 12px; top: 12px; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
-  .tag-food { background: #FFF0F5; color: #C71585; }
-  .tag-view { background: #E6F2FF; color: #1E90FF; }
-  
+  .micro-pane-title { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 12px; border-bottom: 1px dashed var(--border2); padding-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .micro-detail-item { background: var(--bg); border: 1px solid var(--border2); padding: 10px 12px; border-radius: 6px; margin-bottom: 8px; font-size: 12px; }
+
   .map-placeholder { 
     position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; 
     background: radial-gradient(circle at center, #FDFBF7 0%, #E8E2D5 100%); z-index: 5; padding: 40px; text-align: center;
   }
   .guide-title { font-family: 'DM Serif Display', serif; font-size: 32px; color: var(--ink); margin-bottom: 8px; }
   .guide-subtitle { font-size: 15px; color: var(--ink2); margin-bottom: 40px; font-weight: 500; }
-  .astrolabe-wrapper { position: relative; width: 340px; height: 340px; display: flex; align-items: center; justify-content: center; margin-bottom: 40px; }
-  .astrolabe-orbit { position: absolute; border: 1px dashed rgba(26,24,20,0.15); border-radius: 50%; }
-  .orbit-1 { width: 340px; height: 340px; animation: orbit-rot 50s linear infinite; }
-  .orbit-2 { width: 220px; height: 220px; animation: orbit-rot 35s linear infinite reverse; }
-  .astrolabe-center { width: 100px; height: 100px; background: #4A5B4E; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 36px; box-shadow: 0 10px 30px rgba(74,91,78,0.25); z-index: 2; }
   
-  .helper-bubble { position: absolute; background: #fff; border: 1px solid var(--border); padding: 10px 16px; border-radius: 24px; box-shadow: 0 6px 20px rgba(0,0,0,0.04); display: flex; flex-direction: column; font-size: 11px; text-align: left; width: 140px; }
-  .b-pos1 { top: -15px; left: 100px; } .b-pos2 { top: 110px; right: -70px; } .b-pos3 { bottom: -15px; left: 100px; } .b-pos4 { top: 110px; left: -70px; }
-  @keyframes orbit-rot { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-  
-  .bottom-dock { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: #fff; border: 1px solid var(--border); padding: 10px 24px; border-radius: 32px; display: flex; gap: 24px; box-shadow: 0 8px 32px rgba(0,0,0,0.06); z-index: 10; }
-  .dock-item { display: flex; align-items: center; gap: 8px; color: var(--ink2); font-size: 12px; font-weight: 600; cursor: pointer; transition: color 0.2s; }
-  .dock-item:hover { color: var(--accent); }
-
-  .bezier-sandbox-path { fill: none; stroke-linecap: round; pointer-events: stroke; cursor: pointer; }
-  .macro-clean-circle { background: #1A1814; color: #fff; border: 2px solid #fff; border-radius: 50%; width: 22px !important; height: 22px !important; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; box-shadow: 0 3px 8px rgba(0,0,0,0.2); }
   .loading-overlay { position: absolute; inset: 0; background: var(--surface); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
   .loading-overlay.active { opacity: 1; pointer-events: all; }
   .loading-title { font-size: 22px; font-weight: 500; color: var(--ink); }
@@ -133,194 +122,114 @@
         <div class="logo-mark"><i class="ti ti-compass"></i></div>
         <div>
           <div class="logo-name">Mappd</div>
-          <div class="tagline" style="font-size:11px; color:var(--ink3);">J人旅行AI助手</div>
+          <div class="tagline" style="font-size:11px; color:var(--ink3);">J人专属时空自驾决策沙盘</div>
         </div>
       </div>
     </div>
     
     <div class="input-section">
       <div class="input-row">
-        <div class="input-group"><label class="input-label">出发城市</label><input class="input-field" id="start-point" type="text" value="成都"></div>
-        <div class="input-group"><label class="input-label">目的地群</label><input class="input-field" id="destination" type="text" value="美国"></div>
+        <div class="input-group"><label class="input-label">出发城市</label><input class="input-field" id="start-point" type="text" value="上海"></div>
+        <div class="input-group"><label class="input-label">目的地大区</label><input class="input-field" id="destination" type="text" value="云南"></div>
       </div>
       <div class="input-row">
         <div class="input-group"><label class="input-label">出发日期</label><input class="input-field" id="start-date" type="date" value="2026-10-01"></div>
         <div class="input-group">
           <div class="input-row" style="grid-template-columns: 1fr 1fr; gap:6px;">
-            <div class="input-group"><label class="input-label">天数</label><input class="input-field" id="duration" type="number" value="13"></div>
-            <div class="input-group"><label class="input-label">人数</label><input class="input-field" id="travelers" type="number" value="4"></div>
+            <div class="input-group"><label class="input-label">天数</label><input class="input-field" id="duration" type="number" value="7"></div>
+            <div class="input-group"><label class="input-label">人数</label><input class="input-field" id="travelers" type="number" value="3"></div>
           </div>
         </div>
       </div>
       <div class="input-group">
-        <label class="input-label">首席规划偏好倾向 (可多选)</label>
+        <label class="input-label">首席偏好倾向</label>
         <div class="pref-tags">
-          <div class="pref-tag selected" id="pref-drive" onclick="togglePrefTag('pref-drive')">🚗 自驾出行</div>
-          <div class="pref-tag" id="pref-train" onclick="togglePrefTag('pref-train')">🚄 高铁/公共交通</div>
+          <div class="pref-tag selected" id="pref-drive" onclick="togglePrefTag('pref-drive')">🚗 舒适型自驾走廊</div>
+          <div class="pref-tag" id="pref-train" onclick="togglePrefTag('pref-train')">🚄 高铁无缝接驳</div>
         </div>
       </div>
-      <button class="gen-btn" id="gen-btn" onclick="generateOptions()">
+      <button class="gen-btn" id="gen-btn" onclick="executeRoutePlannerSkill()">
         <div class="spinner"></div>
-        <span class="btn-text"><i class="ti ti-calculator"></i> &nbsp;一键Mappd我的攻略</span>
+        <span class="btn-text"><i class="ti ti-route"></i> &nbsp;执行 Mappd 路线精算 Skill</span>
       </button>
     </div>
     
     <div class="divider"></div>
     <div class="results-scroll" id="results-scroll-pane">
       <div class="empty-state" id="empty-state">
-        <i class="ti ti-history"></i>
-        <h3>下一站去哪儿</h3>
-        <p>告诉我目的地，马上启航！</p>
+        <i class="ti ti-git-commit" style="font-size: 36px; color: var(--accent); margin-bottom: 10px; display: block;"></i>
+        <h3>行程骨架未点火</h3>
+        <p>输入模糊意图，为您执行全规则对齐推演。</p>
       </div>
-      <div id="options-list"></div>
+      <div id="manifest-content-area"></div>
     </div>
   </div>
   
   <div class="map-container" id="right-map-area">
     <div class="map-placeholder" id="map-placeholder">
-      <div class="guide-title">J人旅行AI助手</div>
-      <div class="guide-subtitle">还你极致掌控，消灭旅行前夜焦虑</div>
-      <div class="astrolabe-wrapper">
-        <div class="astrolabe-orbit orbit-1"></div><div class="astrolabe-orbit orbit-2"></div>
-        <div class="astrolabe-center"><i class="ti ti-sparkles"></i></div>
-        <div class="helper-bubble b-pos1"><b>智能理解</b><span>日期 | 人数 | 目的地 | 偏好</span></div>
-        <div class="helper-bubble b-pos2"><b>智能规划</b><span>方案生成 | 最优推荐</span></div>
-        <div class="helper-bubble b-pos3"><b>地图规划</b><span>一眼看懂 | 分天细化</span></div>
-        <div class="helper-bubble b-pos4"><b>特惠直达</b><span>实时比价 | 直接购买</span></div>
-      </div>
+      <div class="guide-title">Mappd 3.0</div>
+      <div class="guide-subtitle">让模糊意图瞬间对齐时空规律</div>
     </div>
     
-    <div class="map-top-navigation-bar" id="map-navigation-bar" style="display: none;"></div>
+    <div class="map-top-navigation-bar" id="map-navigation-bar" style="display: none;">
+      <div class="map-nav-tab active" id="tab-geo-overview" onclick="switchMapSandboxView('overview')">📊 宏观大总线动线</div>
+      <div class="map-nav-tab" id="tab-geo-roundtrip" onclick="switchMapSandboxView('roundtrip')">✈️ 往返大交通</div>
+      <div class="map-nav-tab" id="tab-geo-stay" onclick="switchMapSandboxView('stay')">🏨 留宿节点布局</div>
+      <div class="map-nav-tab" id="tab-geo-segment" onclick="switchMapSandboxView('segment')">🚗 城际转场流</div>
+    </div>
+
     <div class="map-floating-micro-pane" id="map-floating-pane"></div>
     <div id="map"></div>
-    
-    <div class="bottom-dock" id="dynamic-fulfillment-dock">
-      <div class="dock-item" onclick="triggerFulfillment('机票')"><i class="ti ti-plane"></i> 机票比价</div>
-      <div class="dock-item" onclick="triggerFulfillment('交通')"><i class="ti ti-car"></i> 交通车务</div>
-      <div class="dock-item" onclick="triggerFulfillment('酒店')"><i class="ti ti-building-skyscrapers"></i> 酒店特惠</div>
-    </div>
-    <div class="loading-overlay" id="loading-overlay"><div class="loading-title">J人专属路线测算中...</div></div>
+    <div class="loading-overlay" id="loading-overlay"><div class="loading-title">正在执行 J人硬规则动线测算...</div></div>
   </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-let map = null, macroMarkers = [], microMarkers = [], polylineLayers = [], globalOptions = [];
-let currentActiveSegments = [], currentOptionId = null, currentSelectedTabId = 'global';
+let map = null, markerLayers = [], polylineLayers = [], currentSkillResponse = null;
 
 function togglePrefTag(id) { document.getElementById(id).classList.toggle('selected'); }
 
-function initMacroMap() {
+function initSandboxMap() {
   if (map) return;
   document.getElementById('map-placeholder').style.display = 'none';
-  map = L.map('map', { zoomControl: false, attributionControl: false }).setView([39.5, -98.35], 4);
+  map = L.map('map', { zoomControl: false, attributionControl: false }).setView([25.04, 102.73], 5);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 18 }).addTo(map);
 }
 
-function cleanLatLng(coordArray) {
-  if (!coordArray || coordArray.length < 2) return null;
-  const lat = parseFloat(coordArray[0]), lng = parseFloat(coordArray[1]);
-  return (isNaN(lat) || isNaN(lng)) ? null : L.latLng(lat, lng);
+function clearMapLayers() {
+  markerLayers.forEach(m => m.remove()); markerLayers = [];
+  polylineLayers.forEach(p => p.remove()); polylineLayers = [];
+  document.getElementById('map-floating-pane').classList.remove('active');
 }
 
-// 💥 终极高韧性地理插值：完美突破美国跨东西海岸的超大像素熔断 Bug
-function generateGeodesicBezierPoints(fromLatLng, toLatLng, isReturn) {
-  const points = [], steps = 30; // 提高采样率确保超大尺度版图下的曲率美学
-  const midLat = (fromLatLng.lat + toLatLng.lat) / 2;
-  const midLng = (fromLatLng.lng + toLatLng.lng) / 2;
+// 🏆 二次贝塞尔离散地理插值，100% 根除美国等超长跨大区线段蒸发的 Bug
+function generateGeodesicLinePoints(fromArr, toArr, curveOffset) {
+  const points = [], steps = 30;
+  const fLat = parseFloat(fromArr[0]), fLng = parseFloat(fromArr[1]);
+  const tLat = parseFloat(toArr[0]), tLng = parseFloat(toArr[1]);
   
-  const dLat = toLatLng.lat - fromLatLng.lat;
-  const dLng = toLatLng.lng - fromLatLng.lng;
+  const midLat = (fLat + tLat) / 2, midLng = (fLng + tLng) / 2;
+  const dLat = tLat - fLat, dLng = tLng - fLng;
   const dist = Math.sqrt(dLat * dLat + dLng * dLng);
-  if (dist === 0) return [fromLatLng];
+  if (dist === 0) return [[fLat, fLng]];
 
-  const offsetMagnitude = dist * 0.15;
-  const nLat = -dLng / dist, nLng = dLat / dist;
-  
-  const controlLat = midLat + nLat * (isReturn ? -offsetMagnitude : offsetMagnitude);
-  const controlLng = midLng + nLng * (isReturn ? -offsetMagnitude : offsetMagnitude);
+  const magnitude = dist * curveOffset;
+  const controlLat = midLat + (-dLng / dist) * magnitude;
+  const controlLng = midLng + (dLat / dist) * magnitude;
 
   for (let i = 0; i <= steps; i++) {
     const t = i / steps;
-    const currLat = (1 - t) * (1 - t) * fromLatLng.lat + 2 * (1 - t) * t * controlLat + t * t * toLatLng.lat;
-    const currLng = (1 - t) * (1 - t) * fromLatLng.lng + 2 * (1 - t) * t * controlLng + t * t * toLatLng.lng;
-    points.push([currLat, currLng]);
+    const cLat = (1 - t) * (1 - t) * fLat + 2 * (1 - t) * t * controlLat + t * t * tLat;
+    const cLng = (1 - t) * (1 - t) * fLng + 2 * (1 - t) * t * controlLng + t * t * tLng;
+    points.push([cLat, cLng]);
   }
   return points;
 }
 
-function renderGeodesicCurves(segments, optionId) {
-  clearPolylineLayers();
-  if (!segments || segments.length === 0) return;
-
-  segments.forEach((seg, sIdx) => {
-    const startLoc = cleanLatLng(seg.coords?.[0]), endLoc = cleanLatLng(seg.coords?.[1]);
-    if (!startLoc || !endLoc || (startLoc.lat === endLoc.lat && startLoc.lng === endLoc.lng)) return;
-
-    const curveGeoPoints = generateGeodesicBezierPoints(startLoc, endLoc, seg.is_return || false);
-    const mode = seg.mode || 'flight';
-    let lineColor = '#B56545'; if(mode === 'drive') lineColor = '#4A5B4E'; if(mode === 'train') lineColor = '#3b5998';
-
-    // 🏆 使用 100% 稳固的地理图层 L.polyline 代替 SVG Overlay，彻底解决线段消失的问题
-    const polyline = L.polyline(curveGeoPoints, {
-      color: lineColor, weight: 4.5, opacity: 0.85,
-      dashArray: mode === 'drive' ? '10, 8' : (mode === 'train' ? '14, 6' : '2, 10'),
-      lineCap: 'round'
-    }).addTo(map);
-
-    polyline.options.flowIndex = sIdx;
-
-    // 💥 完美闭环：点击地图曲线，逆向拨动顶部 Tab 轴
-    polyline.on('click', (e) => {
-      L.DomEvent.stopPropagation(e);
-      highlightActiveCurveAndTriggerPane(sIdx);
-    });
-
-    polyline.on('mouseover', () => { if(currentSelectedTabId === 'global') setCurveVisualStyle(sIdx, true); });
-    polyline.on('mouseout', () => { if(currentSelectedTabId === 'global') setCurveVisualStyle(sIdx, false); });
-
-    polylineLayers.push(polyline);
-  });
-}
-
-function setCurveVisualStyle(sIdx, active) {
-  const line = polylineLayers.find(l => l.options.flowIndex === sIdx);
-  if (!line) return;
-  if (active) {
-    line.setStyle({ color: '#ff4500', weight: 7, opacity: 1, dashArray: null });
-    line.bringToFront();
-  } else {
-    const opt = globalOptions.find(o => o.option_id === currentOptionId);
-    const seg = opt?.macro_route?.segments?.[sIdx];
-    const mode = seg?.mode || 'flight';
-    let lineColor = '#B56545'; if(mode === 'drive') lineColor = '#4A5B4E'; if(mode === 'train') lineColor = '#3b5998';
-    line.setStyle({
-      color: lineColor, weight: 4.5, opacity: 0.85,
-      dashArray: mode === 'drive' ? '10, 8' : (mode === 'train' ? '14, 6' : '2, 10')
-    });
-  }
-}
-
-function highlightActiveCurveAndTriggerPane(sIdx) {
-  polylineLayers.forEach((_, idx) => setCurveVisualStyle(idx, false));
-  setCurveVisualStyle(sIdx, true);
-  const dayNum = sIdx + 1; 
-  const totalDays = parseInt(document.getElementById('duration').value) || 10;
-  if(dayNum <= totalDays) switchMapMasterView('day', dayNum);
-}
-
-function clearPolylineLayers() { polylineLayers.forEach(l => l.remove()); polylineLayers = []; }
-
-function formatDateOffset(startDateStr, dayOffset) {
-  const d = new Date(startDateStr); d.setDate(d.getDate() + dayOffset);
-  const weeks = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-  return `${d.getMonth()+1}月${d.getDate()}日 (${weeks[d.getDay()]})`;
-}
-
-async function generateOptions() {
+async function executeRoutePlannerSkill() {
   const start_point = document.getElementById('start-point').value;
   const destination = document.getElementById('destination').value;
-  const startDate = document.getElementById('start-date').value;
   const days = document.getElementById('duration').value;
   const travelers = document.getElementById('travelers').value;
   const hasDrive = document.getElementById('pref-drive').classList.contains('selected');
@@ -335,180 +244,140 @@ async function generateOptions() {
       body: JSON.stringify({ start_point, destination, days, travelers, hasDrive, hasTrain })
     });
     const data = await res.json();
-    globalOptions = data.options;
+    currentSkillResponse = data;
     
-    initMacroMap();
-    renderOptionCards(data.options);
-    selectCard(0);
+    initSandboxMap();
+    renderLeftManifest(data);
+    document.getElementById('map-navigation-bar').style.display = 'flex';
+    switchMapSandboxView('overview');
   } catch (e) {
-    alert("精算演练失败，请检查网关。");
+    alert("Skill 格式对齐失败，请检查模型输出一致性");
   } finally {
     overlay.className = 'loading-overlay'; btn.disabled = false; btn.classList.remove('loading');
   }
 }
 
-function renderOptionCards(options) {
-  const list = document.getElementById('options-list'); list.innerHTML = '';
-  const est = document.getElementById('empty-state'); if(est) est.style.display = 'none';
-
-  options.forEach((opt, idx) => {
-    const card = document.createElement('div');
-    card.className = `option-card ${idx === 0 ? 'active' : ''}`; card.id = `opt-card-${idx}`;
-    
-    // 💥 极其惊艳的卡片：平铺展现 J人5维精算雷达指标
-    card.innerHTML = `
-      <div class="strategy-badge">${opt.strategy_tag || '最优推荐'}</div>
-      <div class="opt-header" style="padding-right: 70px;"><div class="opt-name">${opt.option_name}</div></div>
-      <div class="opt-desc" style="font-size:12px; color:var(--ink2); margin-top:4px;">📋 ${opt.logic_desc}</div>
-      
-      <div class="j-matrix-grid">
-        <div class="matrix-item"><div class="matrix-label">纯玩时间</div><div class="matrix-val">${opt.pure_play_days || '--'}</div></div>
-        <div class="matrix-item"><div class="matrix-label">最大跨城</div><div class="matrix-val">${opt.max_commute_hours || '--'}</div></div>
-        <div class="matrix-item"><div class="matrix-label">确定性率</div><div class="matrix-val">${opt.certainty_rate || '--'}</div></div>
+// 💥 前端重塑：根据你的必须包含字段，重新绘制左侧极致结构化的卡片
+function renderLeftManifest(data) {
+  document.getElementById('empty-state').style.display = 'none';
+  const container = document.getElementById('manifest-content-area');
+  
+  let tagsHtml = data.experience_tags.map(t => `<span class="tag-capsule"># ${t}</span>`).join('');
+  let nodesHtml = data.nodes.map(n => `
+    <div class="node-timeline-item">
+      <div>
+        <div class="node-city">📍 ${n.city}</div>
+        <div style="font-size:11px; color:var(--ink2); margin-top:2px;">${n.core_value}</div>
       </div>
-
-      <div class="finance-block">
-        <div class="fin-item"><div class="fin-label">团队精算总价</div><div class="fin-val">${opt.total_group_cost}</div></div>
-        <div class="fin-item"><div class="fin-label">全员人均</div><div class="fin-val">${opt.cost_per_person}</div></div>
-      </div>
-      <button class="lock-btn">激活此方案并展开地图沙盘 🚀</button>
-    `;
-    card.addEventListener('click', () => { selectCard(idx); });
-    list.appendChild(card);
-  });
-}
-
-function selectCard(idx) {
-  document.querySelectorAll('.option-card').forEach(c => c.classList.remove('active'));
-  const targetCard = document.getElementById(`opt-card-${idx}`); if(!targetCard) return;
-  targetCard.classList.add('active');
-  
-  const opt = globalOptions[idx];
-  if(!opt) return;
-
-  currentOptionId = opt.option_id;
-  currentActiveSegments = opt.macro_route?.segments || [];
-  
-  buildMapTopNavbar(opt);
-  switchMapMasterView('global', 0);
-}
-
-function buildMapTopNavbar(opt) {
-  const bar = document.getElementById('map-navigation-bar'); bar.style.display = 'flex';
-  const totalDays = parseInt(document.getElementById('duration').value) || 10;
-  const startDateStr = document.getElementById('start-date').value;
-
-  let navHtml = `<div class="map-nav-tab active" id="tab-nav-global" onclick="switchMapMasterView('global', 0)">📊 全局总地图动线</div>`;
-  for(let i = 1; i <= totalDays; i++) {
-    const dayCalendarText = formatDateOffset(startDateStr, i - 1);
-    navHtml += `<div class="map-nav-tab" id="tab-nav-day-${i}" onclick="switchMapMasterView('day', ${i})">📅 ${dayCalendarText} (D${i})</div>`;
-  }
-  bar.innerHTML = navHtml;
-}
-
-function switchMapMasterView(type, dayNum) {
-  document.querySelectorAll('.map-nav-tab').forEach(t => t.classList.remove('active'));
-  const pane = document.getElementById('map-floating-pane');
-  const dock = document.getElementById('dynamic-fulfillment-dock');
-  microMarkers.forEach(m => m.remove()); microMarkers = [];
-
-  if (type === 'global') {
-    currentSelectedTabId = 'global';
-    document.getElementById('tab-nav-global').classList.add('active');
-    pane.classList.remove('active'); 
-    
-    clearAndRenderMacroAnchors();
-    renderGeodesicCurves(currentActiveSegments, currentOptionId);
-    dock.style.display = 'flex'; 
-  } else {
-    currentSelectedTabId = `day-${dayNum}`;
-    const targetTab = document.getElementById(`tab-nav-day-${dayNum}`);
-    if(targetTab) {
-      targetTab.classList.add('active');
-      targetTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-    }
-    
-    clearPolylineLayers(); 
-    pane.classList.add('active');
-    renderFloatingMicroPaneContent(dayNum);
-    injectDayMicroMarkers(dayNum);
-    dock.style.display = 'none'; 
-  }
-}
-
-function clearAndRenderMacroAnchors() {
-  macroMarkers.forEach(m => m.remove()); macroMarkers = [];
-  const opt = globalOptions.find(o => o.option_id === currentOptionId);
-  if (!opt || !opt.macro_route?.anchors) return;
-  
-  map.setView([opt.macro_route.center_lat || 39.5, opt.macro_route.center_lng || -98.35], opt.macro_route.zoom_level || 4);
-
-  opt.macro_route.anchors.forEach((anchor, aIdx) => {
-    const validPoint = cleanLatLng(anchor.latlng); if(!validPoint) return;
-    const cleanIcon = L.divIcon({ className: 'macro-clean-circle', html: `${aIdx + 1}`, iconSize: [22, 22], iconAnchor: [11, 11] });
-    const m = L.marker(validPoint, { icon: cleanIcon }).addTo(map);
-    m.bindTooltip(`<b>${aIdx+1}. ${anchor.name}</b>`, { permanent: true, direction: 'top', offset: [0, -12] });
-    macroMarkers.push(m);
-  });
-}
-
-function injectDayMicroMarkers(dayNum) {
-  const currentCenter = map.getCenter();
-  const simulatedOffsets = [
-    { name: "上午地标级必游卡位点 (分时免排队门票)", lat: currentCenter.lat + 0.03, lng: currentCenter.lng - 0.03, label: "A" },
-    { name: "中午高分黑珍珠/必吃榜特色风味", lat: currentCenter.lat - 0.02, lng: currentCenter.lng + 0.03, label: "B" }
-  ];
-
-  simulatedOffsets.forEach(spot => {
-    const microIcon = L.divIcon({ className: 'macro-clean-circle', html: spot.label, iconSize: [18, 18], iconAnchor: [9, 9] });
-    const m = L.marker([spot.lat, spot.lng], { icon: microIcon }).addTo(map);
-    m.bindTooltip(`<div style="font-size:11px; font-weight:600;">${spot.label}. ${spot.name}</div>`, { permanent: true, direction: 'right' });
-    microMarkers.push(m);
-  });
-  
-  if(microMarkers.length > 0) {
-    const group = new L.featureGroup(microMarkers);
-    map.fitBounds(group.getBounds().pad(0.6));
-  }
-}
-
-function renderFloatingMicroPaneContent(dayNum) {
-  const pane = document.getElementById('map-floating-pane');
-  const travelers = document.getElementById('travelers').value;
-  const startDateStr = document.getElementById('start-date').value;
-  const targetDateText = formatDateOffset(startDateStr, dayNum - 1);
-
-  const mockProductData = [
-    { label: "A", time: "09:30", title: "核心地标建筑 / 精选博物馆巡礼", desc: "💡 国庆期间现场排队预计短则60分钟。已为您智能对准 09:30 黄金早场空位。", action: "🎫 锁定免排队电子门票", prodName: "核心地标免排队入场分时票" },
-    { label: "B", time: "12:45", title: "特色必吃榜 / 当地老字号私房风味", desc: "💡 该店极度紧俏且不设现场排号。小助手已通过底层系统帮您占住了空位。", action: "🍛 锁定 12:45 留座餐券", prodName: "特色地道私房双人午餐券" }
-  ];
-
-  let contentHtml = `<div class="micro-pane-title"><span>🗓️ ${targetDateText} (D${dayNum}) 微观精算</span><i class="ti ti-checklist" style="color:var(--accent);"></i></div>`;
-
-  contentHtml += mockProductData.map(item => `
-    <div class="micro-spot-card">
-      <span class="micro-spot-tag tag-view">${item.time}</span>
-      <div style="font-weight:600; font-size:13px; margin-top:2px; padding-right:40px;">[${item.label}点] ${item.title}</div>
-      <div style="font-size:11px; color:var(--ink2); margin-top:5px; line-height:1.4;">${item.desc}</div>
-      <button class="lock-btn" onclick="triggerDirectContextBooking('${item.prodName}', '${targetDateText}', ${travelers}, event)">
-        ${item.action}
-      </button>
+      <div class="node-nights">${n.nights} 晚</div>
     </div>
   `).join('');
 
-  pane.innerHTML = contentHtml;
+  let html = `
+    <div class="plan-manifest-card">
+      <div class="manifest-headline">${data.headline}</div>
+      <div class="tag-capsule-container">${tagsHtml}</div>
+      
+      <div class="section-subtitle"><i class="ti ti-git-branch"></i> 决策取舍逻辑 (Planning Logic)</div>
+      <div class="logic-callout-box">${data.planning_logic}</div>
+      
+      <div class="section-subtitle"><i class="ti ti-map-pins"></i> 动线节点天数守恒</div>
+      <div style="font-size:12px; font-weight:600; color:var(--accent2); margin-bottom:10px;">动线总览: ${data.route_overview}</div>
+      <div>${nodesHtml}</div>
+
+      <div class="section-subtitle"><i class="ti ti-coin"></i> 舒适型多维财务精算表</div>
+      <table class="finance-精算-table">
+        <tr><td>大交通开销参考</td><td class="finance-price-val">￥${data.cost_estimate.transport}</td></tr>
+        <tr><td>高标住宿小计</td><td class="finance-price-val">￥${data.cost_estimate.accommodation}</td></tr>
+        <tr><td>地道餐饮预算</td><td class="finance-price-val">￥${data.cost_estimate.food}</td></tr>
+        <tr><td>核心门票直达</td><td class="finance-price-val">￥${data.cost_estimate.attraction}</td></tr>
+        <tr style="font-weight:700; font-size:14px; color:var(--ink);"><td style="border:none; padding-top:10px;">全员人均总预估</td><td class="finance-price-val" style="border:none; padding-top:10px; color:var(--accent2)">￥${data.cost_estimate.total_per_person}</td></tr>
+      </table>
+      <div style="font-size:10px; color:var(--ink3); margin-top:6px; font-style:italic;">* ${data.cost_estimate.note}</div>
+      
+      ${data.peak_season_alert ? `<div class="season-alert-banner"><i class="ti ti-alert-triangle"></i> <b>黄金周防意外高能警示：</b><br/>${data.peak_season_alert}</div>` : ''}
+    </div>
+  `;
+  container.innerHTML = html;
 }
 
-function triggerDirectContextBooking(productName, dateText, people, event) {
-  event.stopPropagation();
-  alert(`🛒 【Mappd 原子上下文秒杀网关激活】\n==============================\n【直达商品】：${productName}\n【锁定日期】：${dateText}\n【预约人数】：${people} 人\n==============================\n🚀 参数已全自动100%无缝流转至供应链接口，无需检索，直接跳至支付出票！`);
-}
+// 💥 右侧沙盘魔术化多维路由切换中枢
+function switchMapSandboxView(viewType) {
+  document.querySelectorAll('.map-nav-tab').forEach(t => t.classList.remove('active'));
+  clearMapLayers();
+  
+  if(!currentSkillResponse) return;
+  const data = currentSkillResponse;
+  const pane = document.getElementById('map-floating-pane');
 
-function triggerFulfillment(type) {
-  const activeCard = document.querySelector('.option-card.active'); if (!activeCard) return;
-  const idx = parseInt(activeCard.id.replace('opt-card-', ''));
-  const opt = globalOptions[idx];
-  alert(`🛒 大件大交通网关：\n已捕捉当前【${opt.option_name}】全盘时间节点，一键直达锁定【${type}】！`);
+  if (viewType === 'overview') {
+    document.getElementById('tab-geo-overview').classList.add('active');
+    
+    // 把骨架节点打下桩点
+    if(data.nodes && data.nodes.length > 0) {
+      let geoPoints = [];
+      data.nodes.forEach((n, idx) => {
+        if(!n.latlng) return;
+        const icon = L.divIcon({ className: 'macro-clean-circle', html: `${idx+1}`, iconSize:[22,22] });
+        const m = L.marker(n.latlng, { icon: icon }).addTo(map);
+        m.bindTooltip(`<b>${idx+1}. ${n.city}</b>`, { permanent: true, direction: 'top' });
+        markerLayers.push(m);
+        geoPoints.push(n.latlng);
+      });
+
+      // 用纯原生 Polyline 连接骨架，完美防熔断消失
+      for(let i=0; i<geoPoints.length-1; i++) {
+        const curvePoints = generateGeodesicLinePoints(geoPoints[i], geoPoints[i+1], 0.1);
+        const p = L.polyline(curvePoints, { color: '#4A5B4E', weight: 4, opacity:0.8 }).addTo(map);
+        polylineLayers.push(p);
+      }
+      
+      const bounds = L.latLngBounds(geoPoints);
+      map.fitBounds(bounds.pad(0.3));
+    }
+
+  } else if (viewType === 'roundtrip') {
+    document.getElementById('tab-geo-roundtrip').add('active');
+    pane.classList.add('active');
+    
+    pane.innerHTML = `
+      <div class="micro-pane-title">✈️ 往返大交通时空对齐</div>
+      <div class="micro-detail-item"><b>去程段方式：</b>${data.roundtrip.outbound.method}<br/><b>长途耗时：</b>${data.roundtrip.outbound.duration}<br/><b>参考参考：</b>${data.roundtrip.outbound.price_ref}</div>
+      <div class="micro-detail-item"><b>回程段方式：</b>${data.roundtrip.return.method}<br/><b>长途耗时：</b>${data.roundtrip.return.duration}<br/><b>参考参考：</b>${data.roundtrip.return.price_ref}</div>
+    `;
+
+  } else if (viewType === 'stay') {
+    document.getElementById('tab-geo-stay').classList.add('active');
+    pane.classList.add('active');
+    
+    let html = `<div class="micro-pane-title">🏨 全周期舒适间夜矩阵</div>`;
+    data.accommodation.forEach(acc => {
+      html += `
+        <div class="micro-detail-item">
+          <div style="font-weight:700; color:var(--accent2);">${acc.nights_label} · ${acc.location}</div>
+          <div style="font-size:11px; margin-top:2px;"><b>标准：</b>${acc.type} | <b>预估：</b>${acc.price_range}</div>
+          <div style="font-size:11px; color:var(--ink2); margin-top:4px; line-height:1.3;">📌 ${acc.reason}</div>
+        </div>
+      `;
+    });
+    pane.innerHTML = html;
+
+  } else if (viewType === 'segment') {
+    document.getElementById('tab-geo-segment').classList.add('active');
+    pane.classList.add('active');
+
+    let html = `<div class="micro-pane-title">🚗 城际内部转场衔接流</div>`;
+    data.segment_transport.forEach(seg => {
+      html += `
+        <div class="micro-detail-item">
+          <div style="font-weight:700;">${seg.from} ➔ ${seg.to}</div>
+          <div style="font-size:11px; color:var(--accent); margin-top:2px;"><b>通勤接驳：</b>${seg.method} ${seg.self_drive_rec ? ' | 🚗 推荐自驾' : ''}</div>
+          <div style="font-size:11px; color:var(--ink2); margin-top:4px; line-height:1.3;">📋 <b>取舍逻辑：</b>${seg.reason}</div>
+        </div>
+      `;
+    });
+    pane.innerHTML = html;
+  }
 }
 </script>
 </body>
