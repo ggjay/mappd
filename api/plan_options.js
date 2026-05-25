@@ -9,8 +9,22 @@ export default async function handler(req, res) {
     try {
       let body = req.body;
       if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) {} }
-      const { start_point, destination, days, travelers, hasDrive, hasTrain } = body;
-  
+      const { start_point, destination, days, travelers, hasDrive, hasTrain, travel_styles = [] } = body;
+
+      const STYLE_LABELS = {
+        nature: '自然风景（山水、国家公园、海岸等自然景观优先）',
+        culture: '城市人文（历史街区、博物馆、建筑地标优先）',
+        food: '在地美食（特色餐饮、市集、地方风味优先）',
+        relaxed: '慢节奏（减少赶场，留足自由活动时间）',
+        niche: '小众探索（避开热门打卡，倾向非网红目的地）',
+      };
+      const styleLabels = (Array.isArray(travel_styles) ? travel_styles : [])
+        .filter(s => STYLE_LABELS[s])
+        .map(s => STYLE_LABELS[s]);
+      const styleConstraint = styleLabels.length > 0
+        ? styleLabels.map((s, i) => `  ${i + 1}. ${s}`).join('\n')
+        : '  用户未指定风格偏好，按目的地资源与天数自由平衡';
+
       const apiKey = process.env.DEEPSEEK_API_KEY; 
       if (!apiKey) return res.status(200).json({ error: "API KEY Missing" });
   
@@ -23,6 +37,10 @@ export default async function handler(req, res) {
   - 出行天数：【${days}】天
   - 出行人数：【${travelers}】人
   - 偏好快照：自驾倾向=${hasDrive}，公共轨道交通倾向=${hasTrain}
+  
+  # 旅游风格（软约束，不可违反硬规则）
+  用户勾选的风格偏好如下。这些偏好仅用于意图理解与路线取舍倾向，优先级低于地理聚类、天数守恒等硬规则；多个偏好并存时尽量兼顾，冲突时以地理合理性为先。
+${styleConstraint}
   
   # 规划规则（硬规则，违反任意一条即无效）
   规则1 · 单向动线
