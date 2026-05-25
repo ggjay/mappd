@@ -39,6 +39,11 @@
   .pref-tag { flex: 1; text-align: center; padding: 6px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; cursor: pointer; color: var(--ink2); transition: all 0.2s; }
   .pref-tag.selected { background: var(--accent); color: #fff; border-color: var(--accent); }
 
+  .style-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .style-tag { flex: 1 1 calc(33.33% - 6px); min-width: 0; text-align: center; padding: 7px 4px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 11px; font-weight: 600; cursor: pointer; color: var(--ink2); transition: all 0.2s; user-select: none; }
+  .style-tag.selected { background: var(--accent2); color: #fff; border-color: var(--accent2); }
+  .input-hint { font-size: 10px; color: var(--ink3); margin-top: 4px; }
+
   .gen-btn { width: 100%; padding: 12px; background: var(--ink); color: var(--surface); border: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 8px; margin-bottom: 16px; }
   .gen-btn:disabled { background: var(--ink3); cursor: not-allowed; }
   .gen-btn .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
@@ -142,7 +147,18 @@
         </div>
       </div>
       <div class="input-group">
-        <label class="input-label">首席偏好倾向</label>
+        <label class="input-label">旅游风格</label>
+        <div class="style-tags" id="style-tags">
+          <div class="style-tag" data-style="nature" onclick="toggleStyleTag(this)">🏔 自然风景</div>
+          <div class="style-tag" data-style="culture" onclick="toggleStyleTag(this)">🏛 城市人文</div>
+          <div class="style-tag" data-style="food" onclick="toggleStyleTag(this)">🍜 在地美食</div>
+          <div class="style-tag" data-style="relaxed" onclick="toggleStyleTag(this)">🧘 慢节奏</div>
+          <div class="style-tag" data-style="niche" onclick="toggleStyleTag(this)">🗺 小众探索</div>
+        </div>
+        <div class="input-hint">可多选，作为路线意图的软约束，不选则不做风格偏向</div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">交通偏好</label>
         <div class="pref-tags">
           <div class="pref-tag selected" id="pref-drive" onclick="togglePrefTag('pref-drive')">🚗 舒适型自驾走廊</div>
           <div class="pref-tag" id="pref-train" onclick="togglePrefTag('pref-train')">🚄 高铁无缝接驳</div>
@@ -190,6 +206,12 @@ let map = null, markerLayers = [], polylineLayers = [], currentSkillResponse = n
 
 function togglePrefTag(id) { document.getElementById(id).classList.toggle('selected'); }
 
+function toggleStyleTag(el) { el.classList.toggle('selected'); }
+
+function getSelectedTravelStyles() {
+  return [...document.querySelectorAll('.style-tag.selected')].map(el => el.dataset.style);
+}
+
 function initSandboxMap() {
   if (map) return;
   document.getElementById('map-placeholder').style.display = 'none';
@@ -234,6 +256,7 @@ async function executeRoutePlannerSkill() {
   const travelers = document.getElementById('travelers').value;
   const hasDrive = document.getElementById('pref-drive').classList.contains('selected');
   const hasTrain = document.getElementById('pref-train').classList.contains('selected');
+  const travel_styles = getSelectedTravelStyles();
 
   const btn = document.getElementById('gen-btn'); btn.disabled = true; btn.classList.add('loading');
   const overlay = document.getElementById('loading-overlay'); overlay.className = 'loading-overlay active';
@@ -241,7 +264,7 @@ async function executeRoutePlannerSkill() {
   try {
     const res = await fetch('/api/plan_options', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ start_point, destination, days, travelers, hasDrive, hasTrain })
+      body: JSON.stringify({ start_point, destination, days, travelers, hasDrive, hasTrain, travel_styles })
     });
     const data = await res.json();
     currentSkillResponse = data;
@@ -337,7 +360,7 @@ function switchMapSandboxView(viewType) {
     }
 
   } else if (viewType === 'roundtrip') {
-    document.getElementById('tab-geo-roundtrip').add('active');
+    document.getElementById('tab-geo-roundtrip').classList.add('active');
     pane.classList.add('active');
     
     pane.innerHTML = `
