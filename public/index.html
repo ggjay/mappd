@@ -19,22 +19,44 @@
     --font-body: 'DM Sans', system-ui, sans-serif;
   }
   html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 14px; line-height: 1.6; }
-  .app { display: grid; grid-template-columns: 480px 1fr; height: 100vh; overflow: hidden; }
-  
-  /* 左侧全面升级为精算大盘指挥部 */
+
+  /* —— 欢迎页 —— */
+  .page-welcome {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 32px 20px; background: radial-gradient(ellipse at 30% 20%, #FDFBF7 0%, var(--bg) 55%);
+  }
+  .welcome-card {
+    width: 100%; max-width: 440px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 36px 32px 28px; box-shadow: 0 12px 40px rgba(26,24,20,0.06);
+  }
+  .welcome-title {
+    font-family: 'DM Serif Display', serif; font-size: 26px; line-height: 1.35;
+    color: var(--ink); text-align: center; margin-bottom: 28px; letter-spacing: -0.3px;
+  }
+  .welcome-logo { display: flex; justify-content: center; margin-bottom: 16px; }
+  .welcome-logo .logo-mark {
+    width: 40px; height: 40px; background: var(--ink); border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .welcome-logo .logo-mark i { color: var(--surface); font-size: 20px; }
+
+  /* —— 结果页 —— */
+  .page-results { display: none; grid-template-columns: 480px 1fr; height: 100vh; overflow: hidden; }
+  .page-results.active { display: grid; }
+
   .panel { background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
-  .panel-header { padding: 24px 24px 0; flex-shrink: 0; }
-  .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
-  .logo-mark { width: 32px; height: 32px; background: var(--ink); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
-  .logo-mark i { color: var(--surface); font-size: 17px; }
-  .logo-name { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--ink); letter-spacing: -0.3px; }
-  
-  .input-section { padding: 0 24px; flex-shrink: 0; }
+  .panel-top { padding: 16px 24px; flex-shrink: 0; border-bottom: 1px solid var(--border2); display: flex; align-items: center; justify-content: space-between; }
+  .panel-top-title { font-family: 'DM Serif Display', serif; font-size: 18px; }
+  .back-link { font-size: 12px; color: var(--ink2); cursor: pointer; background: none; border: none; font-family: inherit; display: flex; align-items: center; gap: 4px; }
+  .back-link:hover { color: var(--accent2); }
+
   .input-group { margin-bottom: 10px; }
   .input-label { font-size: 11px; font-weight: 500; color: var(--ink2); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; display: block; }
   .input-field { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 9px 12px; font-family: var(--font-body); font-size: 13px; color: var(--ink); outline: none; }
+  .input-field:focus { border-color: var(--accent); }
   .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  
+
   .pref-tags { display: flex; gap: 8px; margin-top: 4px; }
   .pref-tag { flex: 1; text-align: center; padding: 6px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; cursor: pointer; color: var(--ink2); transition: all 0.2s; }
   .pref-tag.selected { background: var(--accent); color: #fff; border-color: var(--accent); }
@@ -44,58 +66,76 @@
   .style-tag.selected { background: var(--accent2); color: #fff; border-color: var(--accent2); }
   .input-hint { font-size: 10px; color: var(--ink3); margin-top: 4px; }
 
-  .gen-btn { width: 100%; padding: 12px; background: var(--ink); color: var(--surface); border: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 8px; margin-bottom: 16px; }
+  .gen-btn { width: 100%; padding: 13px; background: var(--ink); color: var(--surface); border: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 12px; transition: background 0.2s; }
+  .gen-btn:hover:not(:disabled) { background: var(--accent); }
   .gen-btn:disabled { background: var(--ink3); cursor: not-allowed; }
   .gen-btn .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
   .gen-btn.loading .spinner { display: block; }
   .gen-btn.loading .btn-text { display: none; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  
-  .divider { height: 1px; background: var(--border2); margin: 0 24px; flex-shrink: 0; }
-  
-  /* 滚动舱结构优化 */
-  .results-scroll { flex: 1; overflow-y: auto; padding: 20px 24px 24px; scroll-behavior: smooth; }
+
+  .results-scroll { flex: 1; overflow-y: auto; padding: 16px 24px 24px; scroll-behavior: smooth; }
   .results-scroll::-webkit-scrollbar { width: 4px; }
   .results-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-  /* 💥 贴合全新规划书的高端 UI 组件样式 */
+  .options-label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--ink3); letter-spacing: 0.8px; margin-bottom: 10px; }
+  .plan-options-row { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+
+  .plan-option-card {
+    background: #fff; border: 2px solid var(--border); border-radius: var(--radius);
+    padding: 14px 16px; cursor: pointer; transition: all 0.2s; position: relative;
+  }
+  .plan-option-card:hover { border-color: rgba(74,91,78,0.35); }
+  .plan-option-card.selected {
+    border-color: var(--accent); background: var(--accent-light);
+    box-shadow: 0 4px 16px rgba(74,91,78,0.12);
+  }
+  .plan-option-card .option-badge {
+    display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.6px; color: var(--accent); margin-bottom: 6px;
+  }
+  .plan-option-card.selected .option-badge { color: var(--ink); }
+  .plan-option-headline { font-weight: 600; font-size: 14px; color: var(--ink); line-height: 1.35; margin-bottom: 6px; }
+  .plan-option-diff {
+    font-size: 11px; color: var(--accent2); background: rgba(181,101,69,0.08);
+    padding: 6px 8px; border-radius: 6px; margin-bottom: 8px; line-height: 1.4;
+  }
+  .plan-option-meta { font-size: 11px; color: var(--ink2); display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .plan-option-price { font-weight: 700; color: var(--accent); white-space: nowrap; }
+  .plan-option-check {
+    position: absolute; top: 14px; right: 14px; width: 20px; height: 20px;
+    border: 2px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: transparent; transition: all 0.2s;
+  }
+  .plan-option-card.selected .plan-option-check {
+    background: var(--accent); border-color: var(--accent); color: #fff;
+  }
+
   .plan-manifest-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); }
   .manifest-headline { font-family: 'DM Serif Display', serif; font-size: 20px; font-weight: 600; color: var(--ink); line-height: 1.3; margin-bottom: 10px; }
-  
   .tag-capsule-container { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
   .tag-capsule { background: var(--bg); color: var(--ink2); font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
-  
   .logic-callout-box { background: rgba(181,101,69,0.04); border-left: 3px solid var(--accent2); padding: 12px; border-radius: 0 8px 8px 0; font-size: 12px; color: var(--ink); line-height: 1.5; margin-bottom: 18px; }
   .section-subtitle { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--ink3); letter-spacing: 0.8px; margin-bottom: 8px; margin-top: 16px; display: flex; align-items: center; gap: 6px; }
-  
   .node-timeline-item { background: var(--bg); border: 1px solid var(--border2); padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
   .node-city { font-weight: 600; font-size: 13px; color: var(--ink); }
   .node-nights { background: var(--ink); color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 10px; font-weight: 700; }
-
-  .finance-精算-table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 12px; }
-  .finance-精算-table td { padding: 6px 0; border-bottom: 1px dashed var(--border2); }
+  .finance-table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 12px; }
+  .finance-table td { padding: 6px 0; border-bottom: 1px dashed var(--border2); }
   .finance-price-val { text-align: right; font-weight: 600; color: var(--accent); }
-
   .season-alert-banner { background: #FFF5F5; border: 1px solid #FEB2B2; color: #C53030; padding: 10px 14px; border-radius: 8px; font-size: 11px; line-height: 1.4; margin-top: 14px; font-weight: 500; }
 
-  .empty-state { text-align: center; padding: 60px 0; color: var(--ink3); font-size: 14px; }
-  .empty-state h3 { font-size: 18px; color: var(--ink); margin-bottom: 6px; font-weight: 600; }
-  
-  /* 右侧大地图主战场布局 */
   .map-container { position: relative; background: #E8E2D5; height: 100vh; }
   #map { width: 100%; height: 100%; position: absolute; inset: 0; z-index: 1; background: #E8E2D5; }
-  
-  /* 地图上方的业务分类决策Tab轴 */
-  .map-top-navigation-bar { 
-    position: absolute; top: 20px; left: 20px; right: 20px; 
-    background: #fff; border: 1px solid var(--border); padding: 6px; 
+  .map-top-navigation-bar {
+    position: absolute; top: 20px; left: 20px; right: 20px;
+    background: #fff; border: 1px solid var(--border); padding: 6px;
     border-radius: var(--radius); z-index: 10; box-shadow: 0 8px 24px rgba(0,0,0,0.06);
-    display: flex; gap: 6px; overflow-x: auto;
+    display: none; gap: 6px; overflow-x: auto;
   }
+  .map-top-navigation-bar.active { display: flex; }
   .map-nav-tab { padding: 8px 16px; font-size: 12px; font-weight: 600; color: var(--ink2); border-radius: 6px; cursor: pointer; white-space: nowrap; transition: all 0.2s; background: var(--bg); }
   .map-nav-tab.active { background: var(--ink); color: #fff; }
-  
-  /* 右侧内嵌的浮动高频明细账本舱 */
   .map-floating-micro-pane {
     position: absolute; top: 85px; right: 20px; width: 350px; max-height: calc(100vh - 170px);
     background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
@@ -104,116 +144,128 @@
   }
   .map-floating-micro-pane.active { display: flex; }
   .micro-pane-title { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 12px; border-bottom: 1px dashed var(--border2); padding-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-
   .micro-detail-item { background: var(--bg); border: 1px solid var(--border2); padding: 10px 12px; border-radius: 6px; margin-bottom: 8px; font-size: 12px; }
-
-  .map-placeholder { 
-    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; 
+  .map-placeholder {
+    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
     background: radial-gradient(circle at center, #FDFBF7 0%, #E8E2D5 100%); z-index: 5; padding: 40px; text-align: center;
   }
   .guide-title { font-family: 'DM Serif Display', serif; font-size: 32px; color: var(--ink); margin-bottom: 8px; }
-  .guide-subtitle { font-size: 15px; color: var(--ink2); margin-bottom: 40px; font-weight: 500; }
-  
-  .loading-overlay { position: absolute; inset: 0; background: var(--surface); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  .guide-subtitle { font-size: 15px; color: var(--ink2); font-weight: 500; }
+
+  .loading-overlay {
+    position: fixed; inset: 0; background: rgba(253,251,247,0.92);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+  }
   .loading-overlay.active { opacity: 1; pointer-events: all; }
-  .loading-title { font-size: 22px; font-weight: 500; color: var(--ink); }
+  .loading-title { font-size: 20px; font-weight: 500; color: var(--ink); margin-top: 16px; }
 </style>
 </head>
 <body>
-<div class="app">
+
+<!-- 页面一：欢迎 / 入参 -->
+<div id="page-welcome" class="page-welcome">
+  <div class="welcome-card">
+    <div class="welcome-logo"><div class="logo-mark"><i class="ti ti-compass"></i></div></div>
+    <h1 class="welcome-title">欢迎来到Mappd，J人专属旅行AI助手</h1>
+
+    <div class="input-row">
+      <div class="input-group"><label class="input-label">出发城市</label><input class="input-field" id="start-point" type="text" value="上海"></div>
+      <div class="input-group"><label class="input-label">目的地大区</label><input class="input-field" id="destination" type="text" value="云南"></div>
+    </div>
+    <div class="input-row" style="margin-top:10px">
+      <div class="input-group"><label class="input-label">出发日期</label><input class="input-field" id="start-date" type="date" value="2026-10-01"></div>
+      <div class="input-group">
+        <div class="input-row" style="grid-template-columns:1fr 1fr;gap:6px">
+          <div class="input-group"><label class="input-label">天数</label><input class="input-field" id="duration" type="number" value="7" min="1"></div>
+          <div class="input-group"><label class="input-label">人数</label><input class="input-field" id="travelers" type="number" value="3" min="1"></div>
+        </div>
+      </div>
+    </div>
+    <div class="input-group" style="margin-top:10px">
+      <label class="input-label">旅游风格</label>
+      <div class="style-tags">
+        <div class="style-tag" data-style="nature" onclick="toggleStyleTag(this)">🏔 自然风景</div>
+        <div class="style-tag" data-style="culture" onclick="toggleStyleTag(this)">🏛 城市人文</div>
+        <div class="style-tag" data-style="food" onclick="toggleStyleTag(this)">🍜 在地美食</div>
+        <div class="style-tag" data-style="relaxed" onclick="toggleStyleTag(this)">🧘 慢节奏</div>
+        <div class="style-tag" data-style="niche" onclick="toggleStyleTag(this)">🗺 小众探索</div>
+      </div>
+      <div class="input-hint">可多选，不选则不做风格偏向</div>
+    </div>
+    <div class="input-group">
+      <label class="input-label">交通偏好</label>
+      <div class="pref-tags">
+        <div class="pref-tag" id="pref-drive" onclick="togglePrefTag('pref-drive')">🚗 舒适型自驾走廊</div>
+        <div class="pref-tag" id="pref-train" onclick="togglePrefTag('pref-train')">🚄 高铁无缝接驳</div>
+      </div>
+      <div class="input-hint">可多选，不选则由 AI 给出对比方案</div>
+    </div>
+    <button class="gen-btn" id="gen-btn" onclick="executeRoutePlannerSkill()">
+      <div class="spinner"></div>
+      <span class="btn-text">点击查看推荐路线</span>
+    </button>
+  </div>
+</div>
+
+<!-- 页面二：方案 + 地图 -->
+<div id="page-results" class="page-results">
   <div class="panel">
-    <div class="panel-header">
-      <div class="logo">
-        <div class="logo-mark"><i class="ti ti-compass"></i></div>
-        <div>
-          <div class="logo-name">Mappd</div>
-          <div class="tagline" style="font-size:11px; color:var(--ink3);">J人专属时空自驾决策沙盘</div>
-        </div>
-      </div>
+    <div class="panel-top">
+      <span class="panel-top-title">推荐路线</span>
+      <button class="back-link" onclick="goToWelcome()"><i class="ti ti-arrow-left"></i> 重新填写</button>
     </div>
-    
-    <div class="input-section">
-      <div class="input-row">
-        <div class="input-group"><label class="input-label">出发城市</label><input class="input-field" id="start-point" type="text" value="上海"></div>
-        <div class="input-group"><label class="input-label">目的地大区</label><input class="input-field" id="destination" type="text" value="云南"></div>
-      </div>
-      <div class="input-row">
-        <div class="input-group"><label class="input-label">出发日期</label><input class="input-field" id="start-date" type="date" value="2026-10-01"></div>
-        <div class="input-group">
-          <div class="input-row" style="grid-template-columns: 1fr 1fr; gap:6px;">
-            <div class="input-group"><label class="input-label">天数</label><input class="input-field" id="duration" type="number" value="7"></div>
-            <div class="input-group"><label class="input-label">人数</label><input class="input-field" id="travelers" type="number" value="3"></div>
-          </div>
-        </div>
-      </div>
-      <div class="input-group">
-        <label class="input-label">旅游风格</label>
-        <div class="style-tags" id="style-tags">
-          <div class="style-tag" data-style="nature" onclick="toggleStyleTag(this)">🏔 自然风景</div>
-          <div class="style-tag" data-style="culture" onclick="toggleStyleTag(this)">🏛 城市人文</div>
-          <div class="style-tag" data-style="food" onclick="toggleStyleTag(this)">🍜 在地美食</div>
-          <div class="style-tag" data-style="relaxed" onclick="toggleStyleTag(this)">🧘 慢节奏</div>
-          <div class="style-tag" data-style="niche" onclick="toggleStyleTag(this)">🗺 小众探索</div>
-        </div>
-        <div class="input-hint">可多选，作为路线意图的软约束，不选则不做风格偏向</div>
-      </div>
-      <div class="input-group">
-        <label class="input-label">交通偏好</label>
-        <div class="pref-tags">
-          <div class="pref-tag selected" id="pref-drive" onclick="togglePrefTag('pref-drive')">🚗 舒适型自驾走廊</div>
-          <div class="pref-tag" id="pref-train" onclick="togglePrefTag('pref-train')">🚄 高铁无缝接驳</div>
-        </div>
-      </div>
-      <button class="gen-btn" id="gen-btn" onclick="executeRoutePlannerSkill()">
-        <div class="spinner"></div>
-        <span class="btn-text"><i class="ti ti-route"></i> &nbsp;执行 Mappd 路线精算 Skill</span>
-      </button>
-    </div>
-    
-    <div class="divider"></div>
-    <div class="results-scroll" id="results-scroll-pane">
-      <div class="empty-state" id="empty-state">
-        <i class="ti ti-git-commit" style="font-size: 36px; color: var(--accent); margin-bottom: 10px; display: block;"></i>
-        <h3>行程骨架未点火</h3>
-        <p>输入模糊意图，为您执行全规则对齐推演。</p>
-      </div>
+    <div class="results-scroll">
+      <div class="options-label">请选择方案（共 2 套）</div>
+      <div class="plan-options-row" id="plan-options-row"></div>
       <div id="manifest-content-area"></div>
     </div>
   </div>
-  
-  <div class="map-container" id="right-map-area">
+
+  <div class="map-container">
     <div class="map-placeholder" id="map-placeholder">
-      <div class="guide-title">Mappd 3.0</div>
-      <div class="guide-subtitle">让模糊意图瞬间对齐时空规律</div>
+      <div class="guide-title">Mappd</div>
+      <div class="guide-subtitle">选择左侧方案，地图将同步展示动线</div>
     </div>
-    
-    <div class="map-top-navigation-bar" id="map-navigation-bar" style="display: none;">
+    <div class="map-top-navigation-bar" id="map-navigation-bar">
       <div class="map-nav-tab active" id="tab-geo-overview" onclick="switchMapSandboxView('overview')">📊 宏观大总线动线</div>
       <div class="map-nav-tab" id="tab-geo-roundtrip" onclick="switchMapSandboxView('roundtrip')">✈️ 往返大交通</div>
       <div class="map-nav-tab" id="tab-geo-stay" onclick="switchMapSandboxView('stay')">🏨 留宿节点布局</div>
       <div class="map-nav-tab" id="tab-geo-segment" onclick="switchMapSandboxView('segment')">🚗 城际转场流</div>
     </div>
-
     <div class="map-floating-micro-pane" id="map-floating-pane"></div>
     <div id="map"></div>
-    <div class="loading-overlay" id="loading-overlay"><div class="loading-title">正在执行 J人硬规则动线测算...</div></div>
   </div>
+</div>
+
+<div class="loading-overlay" id="loading-overlay">
+  <div class="spinner" style="width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite"></div>
+  <div class="loading-title">正在为您推演 2 套差异化路线…</div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-let map = null, markerLayers = [], polylineLayers = [], currentSkillResponse = null;
+let map = null, markerLayers = [], polylineLayers = [];
+let planOptions = [], selectedPlanIndex = 0, currentSkillResponse = null;
 
 function togglePrefTag(id) { document.getElementById(id).classList.toggle('selected'); }
-
 function toggleStyleTag(el) { el.classList.toggle('selected'); }
-
 function getSelectedTravelStyles() {
   return [...document.querySelectorAll('.style-tag.selected')].map(el => el.dataset.style);
 }
 
+function goToWelcome() {
+  document.getElementById('page-welcome').style.display = 'flex';
+  document.getElementById('page-results').classList.remove('active');
+}
+
+function showResultsPage() {
+  document.getElementById('page-welcome').style.display = 'none';
+  document.getElementById('page-results').classList.add('active');
+}
+
 function initSandboxMap() {
-  if (map) return;
+  if (map) { map.invalidateSize(); return; }
   document.getElementById('map-placeholder').style.display = 'none';
   map = L.map('map', { zoomControl: false, attributionControl: false }).setView([25.04, 102.73], 5);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 18 }).addTo(map);
@@ -225,181 +277,185 @@ function clearMapLayers() {
   document.getElementById('map-floating-pane').classList.remove('active');
 }
 
-// 🏆 二次贝塞尔离散地理插值，100% 根除美国等超长跨大区线段蒸发的 Bug
 function generateGeodesicLinePoints(fromArr, toArr, curveOffset) {
   const points = [], steps = 30;
   const fLat = parseFloat(fromArr[0]), fLng = parseFloat(fromArr[1]);
   const tLat = parseFloat(toArr[0]), tLng = parseFloat(toArr[1]);
-  
   const midLat = (fLat + tLat) / 2, midLng = (fLng + tLng) / 2;
   const dLat = tLat - fLat, dLng = tLng - fLng;
   const dist = Math.sqrt(dLat * dLat + dLng * dLng);
   if (dist === 0) return [[fLat, fLng]];
-
   const magnitude = dist * curveOffset;
   const controlLat = midLat + (-dLng / dist) * magnitude;
   const controlLng = midLng + (dLat / dist) * magnitude;
-
   for (let i = 0; i <= steps; i++) {
     const t = i / steps;
-    const cLat = (1 - t) * (1 - t) * fLat + 2 * (1 - t) * t * controlLat + t * t * tLat;
-    const cLng = (1 - t) * (1 - t) * fLng + 2 * (1 - t) * t * controlLng + t * t * tLng;
-    points.push([cLat, cLng]);
+    points.push([
+      (1 - t) * (1 - t) * fLat + 2 * (1 - t) * t * controlLat + t * t * tLat,
+      (1 - t) * (1 - t) * fLng + 2 * (1 - t) * t * controlLng + t * t * tLng,
+    ]);
   }
   return points;
 }
 
 async function executeRoutePlannerSkill() {
-  const start_point = document.getElementById('start-point').value;
-  const destination = document.getElementById('destination').value;
-  const days = document.getElementById('duration').value;
-  const travelers = document.getElementById('travelers').value;
-  const hasDrive = document.getElementById('pref-drive').classList.contains('selected');
-  const hasTrain = document.getElementById('pref-train').classList.contains('selected');
-  const travel_styles = getSelectedTravelStyles();
+  const payload = {
+    start_point: document.getElementById('start-point').value,
+    destination: document.getElementById('destination').value,
+    days: document.getElementById('duration').value,
+    travelers: document.getElementById('travelers').value,
+    hasDrive: document.getElementById('pref-drive').classList.contains('selected'),
+    hasTrain: document.getElementById('pref-train').classList.contains('selected'),
+    travel_styles: getSelectedTravelStyles(),
+  };
 
-  const btn = document.getElementById('gen-btn'); btn.disabled = true; btn.classList.add('loading');
-  const overlay = document.getElementById('loading-overlay'); overlay.className = 'loading-overlay active';
+  const btn = document.getElementById('gen-btn');
+  btn.disabled = true; btn.classList.add('loading');
+  document.getElementById('loading-overlay').classList.add('active');
 
   try {
     const res = await fetch('/api/plan_options', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ start_point, destination, days, travelers, hasDrive, hasTrain, travel_styles })
+      body: JSON.stringify(payload),
     });
     const data = await res.json();
-    currentSkillResponse = data;
-    
+    planOptions = data.options || [];
+    if (!planOptions.length) throw new Error('no options');
+
+    selectedPlanIndex = 0;
+    showResultsPage();
+    renderPlanOptionCards();
+    selectPlan(0);
     initSandboxMap();
-    renderLeftManifest(data);
-    document.getElementById('map-navigation-bar').style.display = 'flex';
-    switchMapSandboxView('overview');
+    document.getElementById('map-navigation-bar').classList.add('active');
+    setTimeout(() => { if (map) map.invalidateSize(); }, 100);
   } catch (e) {
-    alert("Skill 格式对齐失败，请检查模型输出一致性");
+    alert('路线生成失败，请稍后重试');
   } finally {
-    overlay.className = 'loading-overlay'; btn.disabled = false; btn.classList.remove('loading');
+    document.getElementById('loading-overlay').classList.remove('active');
+    btn.disabled = false; btn.classList.remove('loading');
   }
 }
 
-// 💥 前端重塑：根据你的必须包含字段，重新绘制左侧极致结构化的卡片
+function renderPlanOptionCards() {
+  const row = document.getElementById('plan-options-row');
+  row.innerHTML = planOptions.map((plan, idx) => `
+    <div class="plan-option-card ${idx === selectedPlanIndex ? 'selected' : ''}" onclick="selectPlan(${idx})" data-idx="${idx}">
+      <div class="plan-option-check"><i class="ti ti-check"></i></div>
+      <div class="option-badge">${plan.option_label || '方案 ' + (idx + 1)}</div>
+      <div class="plan-option-headline">${plan.headline}</div>
+      ${plan.diff_highlight ? `<div class="plan-option-diff">${plan.diff_highlight}</div>` : ''}
+      <div class="plan-option-meta">
+        <span>${plan.route_overview || ''}</span>
+        <span class="plan-option-price">￥${plan.cost_estimate?.total_per_person || '—'}/人</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function selectPlan(idx) {
+  selectedPlanIndex = idx;
+  currentSkillResponse = planOptions[idx];
+  document.querySelectorAll('.plan-option-card').forEach((el, i) => {
+    el.classList.toggle('selected', i === idx);
+  });
+  renderLeftManifest(currentSkillResponse);
+  switchMapSandboxView('overview');
+}
+
 function renderLeftManifest(data) {
-  document.getElementById('empty-state').style.display = 'none';
   const container = document.getElementById('manifest-content-area');
-  
-  let tagsHtml = data.experience_tags.map(t => `<span class="tag-capsule"># ${t}</span>`).join('');
-  let nodesHtml = data.nodes.map(n => `
+  const tags = (data.experience_tags || []).map(t => `<span class="tag-capsule"># ${t}</span>`).join('');
+  const nodes = (data.nodes || []).map(n => `
     <div class="node-timeline-item">
       <div>
         <div class="node-city">📍 ${n.city}</div>
-        <div style="font-size:11px; color:var(--ink2); margin-top:2px;">${n.core_value}</div>
+        <div style="font-size:11px;color:var(--ink2);margin-top:2px">${n.core_value}</div>
       </div>
       <div class="node-nights">${n.nights} 晚</div>
     </div>
   `).join('');
+  const ce = data.cost_estimate || {};
 
-  let html = `
+  container.innerHTML = `
     <div class="plan-manifest-card">
       <div class="manifest-headline">${data.headline}</div>
-      <div class="tag-capsule-container">${tagsHtml}</div>
-      
-      <div class="section-subtitle"><i class="ti ti-git-branch"></i> 决策取舍逻辑 (Planning Logic)</div>
+      <div class="tag-capsule-container">${tags}</div>
+      <div class="section-subtitle"><i class="ti ti-git-branch"></i> 决策取舍逻辑</div>
       <div class="logic-callout-box">${data.planning_logic}</div>
-      
-      <div class="section-subtitle"><i class="ti ti-map-pins"></i> 动线节点天数守恒</div>
-      <div style="font-size:12px; font-weight:600; color:var(--accent2); margin-bottom:10px;">动线总览: ${data.route_overview}</div>
-      <div>${nodesHtml}</div>
-
-      <div class="section-subtitle"><i class="ti ti-coin"></i> 舒适型多维财务精算表</div>
-      <table class="finance-精算-table">
-        <tr><td>大交通开销参考</td><td class="finance-price-val">￥${data.cost_estimate.transport}</td></tr>
-        <tr><td>高标住宿小计</td><td class="finance-price-val">￥${data.cost_estimate.accommodation}</td></tr>
-        <tr><td>地道餐饮预算</td><td class="finance-price-val">￥${data.cost_estimate.food}</td></tr>
-        <tr><td>核心门票直达</td><td class="finance-price-val">￥${data.cost_estimate.attraction}</td></tr>
-        <tr style="font-weight:700; font-size:14px; color:var(--ink);"><td style="border:none; padding-top:10px;">全员人均总预估</td><td class="finance-price-val" style="border:none; padding-top:10px; color:var(--accent2)">￥${data.cost_estimate.total_per_person}</td></tr>
+      <div class="section-subtitle"><i class="ti ti-map-pins"></i> 动线节点</div>
+      <div style="font-size:12px;font-weight:600;color:var(--accent2);margin-bottom:10px">${data.route_overview}</div>
+      <div>${nodes}</div>
+      <div class="section-subtitle"><i class="ti ti-coin"></i> 财务精算</div>
+      <table class="finance-table">
+        <tr><td>大交通</td><td class="finance-price-val">￥${ce.transport}</td></tr>
+        <tr><td>住宿</td><td class="finance-price-val">￥${ce.accommodation}</td></tr>
+        <tr><td>餐饮</td><td class="finance-price-val">￥${ce.food}</td></tr>
+        <tr><td>门票</td><td class="finance-price-val">￥${ce.attraction}</td></tr>
+        <tr style="font-weight:700"><td style="border:none;padding-top:10px">人均总计</td><td class="finance-price-val" style="border:none;padding-top:10px;color:var(--accent2)">￥${ce.total_per_person}</td></tr>
       </table>
-      <div style="font-size:10px; color:var(--ink3); margin-top:6px; font-style:italic;">* ${data.cost_estimate.note}</div>
-      
-      ${data.peak_season_alert ? `<div class="season-alert-banner"><i class="ti ti-alert-triangle"></i> <b>黄金周防意外高能警示：</b><br/>${data.peak_season_alert}</div>` : ''}
+      <div style="font-size:10px;color:var(--ink3);margin-top:6px;font-style:italic">* ${ce.note}</div>
+      ${data.peak_season_alert ? `<div class="season-alert-banner"><i class="ti ti-alert-triangle"></i> <b>旺季提示：</b>${data.peak_season_alert}</div>` : ''}
     </div>
   `;
-  container.innerHTML = html;
 }
 
-// 💥 右侧沙盘魔术化多维路由切换中枢
 function switchMapSandboxView(viewType) {
   document.querySelectorAll('.map-nav-tab').forEach(t => t.classList.remove('active'));
   clearMapLayers();
-  
-  if(!currentSkillResponse) return;
+  if (!currentSkillResponse || !map) return;
   const data = currentSkillResponse;
   const pane = document.getElementById('map-floating-pane');
 
   if (viewType === 'overview') {
     document.getElementById('tab-geo-overview').classList.add('active');
-    
-    // 把骨架节点打下桩点
-    if(data.nodes && data.nodes.length > 0) {
-      let geoPoints = [];
+    if (data.nodes?.length) {
+      const geoPoints = [];
       data.nodes.forEach((n, idx) => {
-        if(!n.latlng) return;
-        const icon = L.divIcon({ className: 'macro-clean-circle', html: `${idx+1}`, iconSize:[22,22] });
-        const m = L.marker(n.latlng, { icon: icon }).addTo(map);
-        m.bindTooltip(`<b>${idx+1}. ${n.city}</b>`, { permanent: true, direction: 'top' });
+        if (!n.latlng) return;
+        const m = L.marker(n.latlng, {
+          icon: L.divIcon({ className: 'macro-clean-circle', html: `${idx + 1}`, iconSize: [22, 22] }),
+        }).addTo(map);
+        m.bindTooltip(`<b>${idx + 1}. ${n.city}</b>`, { permanent: true, direction: 'top' });
         markerLayers.push(m);
         geoPoints.push(n.latlng);
       });
-
-      // 用纯原生 Polyline 连接骨架，完美防熔断消失
-      for(let i=0; i<geoPoints.length-1; i++) {
-        const curvePoints = generateGeodesicLinePoints(geoPoints[i], geoPoints[i+1], 0.1);
-        const p = L.polyline(curvePoints, { color: '#4A5B4E', weight: 4, opacity:0.8 }).addTo(map);
-        polylineLayers.push(p);
+      for (let i = 0; i < geoPoints.length - 1; i++) {
+        const curve = generateGeodesicLinePoints(geoPoints[i], geoPoints[i + 1], 0.1);
+        polylineLayers.push(L.polyline(curve, { color: '#4A5B4E', weight: 4, opacity: 0.8 }).addTo(map));
       }
-      
-      const bounds = L.latLngBounds(geoPoints);
-      map.fitBounds(bounds.pad(0.3));
+      if (geoPoints.length) map.fitBounds(L.latLngBounds(geoPoints).pad(0.3));
     }
-
   } else if (viewType === 'roundtrip') {
     document.getElementById('tab-geo-roundtrip').classList.add('active');
     pane.classList.add('active');
-    
     pane.innerHTML = `
-      <div class="micro-pane-title">✈️ 往返大交通时空对齐</div>
-      <div class="micro-detail-item"><b>去程段方式：</b>${data.roundtrip.outbound.method}<br/><b>长途耗时：</b>${data.roundtrip.outbound.duration}<br/><b>参考参考：</b>${data.roundtrip.outbound.price_ref}</div>
-      <div class="micro-detail-item"><b>回程段方式：</b>${data.roundtrip.return.method}<br/><b>长途耗时：</b>${data.roundtrip.return.duration}<br/><b>参考参考：</b>${data.roundtrip.return.price_ref}</div>
+      <div class="micro-pane-title">✈️ 往返大交通</div>
+      <div class="micro-detail-item"><b>去程：</b>${data.roundtrip?.outbound?.method}<br/>${data.roundtrip?.outbound?.duration} · ${data.roundtrip?.outbound?.price_ref}</div>
+      <div class="micro-detail-item"><b>回程：</b>${data.roundtrip?.return?.method}<br/>${data.roundtrip?.return?.duration} · ${data.roundtrip?.return?.price_ref}</div>
     `;
-
   } else if (viewType === 'stay') {
     document.getElementById('tab-geo-stay').classList.add('active');
     pane.classList.add('active');
-    
-    let html = `<div class="micro-pane-title">🏨 全周期舒适间夜矩阵</div>`;
-    data.accommodation.forEach(acc => {
-      html += `
+    pane.innerHTML = `<div class="micro-pane-title">🏨 留宿布局</div>` +
+      (data.accommodation || []).map(acc => `
         <div class="micro-detail-item">
-          <div style="font-weight:700; color:var(--accent2);">${acc.nights_label} · ${acc.location}</div>
-          <div style="font-size:11px; margin-top:2px;"><b>标准：</b>${acc.type} | <b>预估：</b>${acc.price_range}</div>
-          <div style="font-size:11px; color:var(--ink2); margin-top:4px; line-height:1.3;">📌 ${acc.reason}</div>
+          <div style="font-weight:700;color:var(--accent2)">${acc.nights_label} · ${acc.location}</div>
+          <div style="font-size:11px;margin-top:2px"><b>${acc.type}</b> · ${acc.price_range}</div>
+          <div style="font-size:11px;color:var(--ink2);margin-top:4px">${acc.reason}</div>
         </div>
-      `;
-    });
-    pane.innerHTML = html;
-
+      `).join('');
   } else if (viewType === 'segment') {
     document.getElementById('tab-geo-segment').classList.add('active');
     pane.classList.add('active');
-
-    let html = `<div class="micro-pane-title">🚗 城际内部转场衔接流</div>`;
-    data.segment_transport.forEach(seg => {
-      html += `
+    pane.innerHTML = `<div class="micro-pane-title">🚗 城际转场</div>` +
+      (data.segment_transport || []).map(seg => `
         <div class="micro-detail-item">
-          <div style="font-weight:700;">${seg.from} ➔ ${seg.to}</div>
-          <div style="font-size:11px; color:var(--accent); margin-top:2px;"><b>通勤接驳：</b>${seg.method} ${seg.self_drive_rec ? ' | 🚗 推荐自驾' : ''}</div>
-          <div style="font-size:11px; color:var(--ink2); margin-top:4px; line-height:1.3;">📋 <b>取舍逻辑：</b>${seg.reason}</div>
+          <div style="font-weight:700">${seg.from} ➔ ${seg.to}</div>
+          <div style="font-size:11px;color:var(--accent);margin-top:2px">${seg.method}${seg.self_drive_rec ? ' · 推荐自驾' : ''}</div>
+          <div style="font-size:11px;color:var(--ink2);margin-top:4px">${seg.reason}</div>
         </div>
-      `;
-    });
-    pane.innerHTML = html;
+      `).join('');
   }
 }
 </script>
