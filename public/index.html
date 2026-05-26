@@ -233,6 +233,74 @@
     color: var(--accent); font-size: 20px; font-weight: 700; text-shadow: 0 0 3px #fff;
     line-height: 1; display: block;
   }
+
+  .map-day-hint {
+    position: absolute; bottom: 20px; left: 20px; right: 20px; max-width: 420px;
+    background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 12px 14px; z-index: 12; box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    font-size: 12px; display: none;
+  }
+  .map-day-hint.active { display: block; }
+  .map-day-hint-title { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
+
+  .pin-attraction {
+    width: 28px; height: 28px; background: #5B4E8A; color: #fff; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700;
+    border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.2); cursor: pointer;
+  }
+  .pin-meal {
+    width: 26px; height: 26px; background: var(--accent2); color: #fff; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700;
+    border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.2); cursor: pointer;
+  }
+
+  .map-detail-sheet {
+    position: absolute; top: 0; right: 0; width: 380px; max-width: 92vw; height: 100%;
+    background: var(--surface); border-left: 1px solid var(--border);
+    z-index: 30; transform: translateX(100%); transition: transform 0.28s ease;
+    display: flex; flex-direction: column; box-shadow: -8px 0 32px rgba(0,0,0,0.1);
+  }
+  .map-detail-sheet.open { transform: translateX(0); }
+  .sheet-header {
+    padding: 14px 16px; border-bottom: 1px solid var(--border2);
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; flex-shrink: 0;
+  }
+  .sheet-close {
+    background: var(--bg); border: none; width: 32px; height: 32px; border-radius: 8px;
+    cursor: pointer; font-size: 18px; color: var(--ink2); flex-shrink: 0;
+  }
+  .sheet-body { flex: 1; overflow-y: auto; padding: 16px; }
+  .sheet-cover {
+    width: 100%; height: 160px; object-fit: cover; border-radius: var(--radius-sm); margin-bottom: 14px;
+    background: var(--bg);
+  }
+  .sheet-title { font-family: 'DM Serif Display', serif; font-size: 20px; line-height: 1.3; margin-bottom: 8px; }
+  .sheet-meta-row { font-size: 12px; color: var(--ink2); margin-bottom: 6px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .sheet-tag {
+    display: inline-block; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+    background: var(--accent-light); color: var(--accent);
+  }
+  .sheet-tag.paid { background: rgba(181,101,69,0.12); color: var(--accent2); }
+  .sheet-highlights { font-size: 13px; line-height: 1.55; color: var(--ink); margin: 12px 0; }
+  .sheet-btn {
+    display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px;
+    background: var(--ink); color: #fff; border-radius: var(--radius-sm);
+    font-size: 13px; font-weight: 600; text-decoration: none; margin-top: 8px;
+  }
+  .sheet-btn:hover { background: var(--accent); }
+  .restaurant-card {
+    background: var(--bg); border: 1px solid var(--border2); border-radius: var(--radius-sm);
+    padding: 12px; margin-bottom: 10px; cursor: pointer; transition: border-color 0.2s;
+  }
+  .restaurant-card:hover { border-color: var(--accent); }
+  .restaurant-card .r-name { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+  .restaurant-card .r-rating { color: #E67E22; font-weight: 700; font-size: 13px; }
+  .restaurant-card .r-meta { font-size: 11px; color: var(--ink2); margin-top: 4px; }
+  .dianping-badge {
+    display: inline-flex; align-items: center; gap: 4px; font-size: 10px; color: #FF6633;
+    font-weight: 700; margin-bottom: 8px;
+  }
+  .map-nav-tab.loading-tab { opacity: 0.6; pointer-events: none; }
 </style>
 </head>
 <body>
@@ -303,12 +371,20 @@
       <div class="guide-subtitle">选择左侧方案，地图将同步展示动线</div>
     </div>
     <div class="map-top-navigation-bar" id="map-navigation-bar">
-      <div class="map-nav-tab active" id="tab-geo-overview" onclick="switchMapSandboxView('overview')">🗺 动线总览</div>
-      <div class="map-nav-tab" id="tab-geo-roundtrip" onclick="switchMapSandboxView('roundtrip')">✈️ 往返大交通</div>
-      <div class="map-nav-tab" id="tab-geo-stay" onclick="switchMapSandboxView('stay')">🏨 留宿节点布局</div>
-      <div class="map-nav-tab" id="tab-geo-segment" onclick="switchMapSandboxView('segment')">🚗 城际转场流</div>
+      <div class="map-nav-tab active" data-view="overview" onclick="switchMapSandboxView('overview')">🗺 路线总览</div>
+      <div id="map-day-tabs"></div>
     </div>
-    <div class="map-floating-micro-pane" id="map-floating-pane"></div>
+    <div class="map-day-hint" id="map-day-hint">
+      <div class="map-day-hint-title" id="map-day-hint-title"></div>
+      <div id="map-day-hint-body"></div>
+    </div>
+    <div class="map-detail-sheet" id="map-detail-sheet">
+      <div class="sheet-header">
+        <div id="sheet-header-text"></div>
+        <button class="sheet-close" onclick="closeDetailSheet()" aria-label="关闭">×</button>
+      </div>
+      <div class="sheet-body" id="sheet-body"></div>
+    </div>
     <div id="map"></div>
   </div>
 </div>
@@ -324,6 +400,14 @@
 let map = null, markerLayers = [], polylineLayers = [];
 let planOptions = [], selectedPlanIndex = 0, currentSkillResponse = null;
 let lastSearchPayload = {};
+let dayDetailCache = {};
+let currentDayDetails = null;
+let currentMapView = 'overview';
+let dayDetailsLoading = false;
+
+function escapeHtml(str) {
+  return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
 
 function getPlanHeadline(plan) {
   if (!plan) return '推荐路线';
@@ -363,7 +447,165 @@ function initSandboxMap() {
 function clearMapLayers() {
   markerLayers.forEach(m => m.remove()); markerLayers = [];
   polylineLayers.forEach(p => p.remove()); polylineLayers = [];
-  document.getElementById('map-floating-pane').classList.remove('active');
+  document.getElementById('map-day-hint')?.classList.remove('active');
+}
+
+function closeDetailSheet() {
+  document.getElementById('map-detail-sheet').classList.remove('open');
+}
+
+function getPlanCacheKey() {
+  return `plan_${selectedPlanIndex}`;
+}
+
+async function loadDayDetailsForPlan() {
+  const key = getPlanCacheKey();
+  if (dayDetailCache[key]) {
+    currentDayDetails = dayDetailCache[key];
+    buildMapDayTabs();
+    return;
+  }
+  if (dayDetailsLoading) return;
+  dayDetailsLoading = true;
+  buildMapDayTabs(true);
+
+  try {
+    const res = await fetch('/api/day_detail', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        plan: currentSkillResponse,
+        days: lastSearchPayload.days || 7,
+        travelers: lastSearchPayload.travelers || 2,
+        destination: lastSearchPayload.destination,
+        start_point: lastSearchPayload.start_point,
+      }),
+    });
+    const data = await res.json();
+    currentDayDetails = data.days || [];
+    dayDetailCache[key] = currentDayDetails;
+  } catch (e) {
+    currentDayDetails = [];
+  } finally {
+    dayDetailsLoading = false;
+    buildMapDayTabs(false);
+    if (currentMapView.startsWith('day-')) {
+      const dayNum = parseInt(currentMapView.replace('day-', ''), 10);
+      renderDayDetailMap(dayNum);
+    }
+  }
+}
+
+function buildMapDayTabs(isLoading = false) {
+  const container = document.getElementById('map-day-tabs');
+  const totalDays = parseInt(lastSearchPayload.days, 10) || 7;
+  let html = '';
+  for (let d = 1; d <= totalDays; d++) {
+    const active = currentMapView === `day-${d}` ? ' active' : '';
+    const loading = isLoading ? ' loading-tab' : '';
+    html += `<div class="map-nav-tab${active}${loading}" data-view="day-${d}" onclick="switchMapSandboxView('day-${d}')">第${d}天</div>`;
+  }
+  container.innerHTML = html;
+}
+
+function openAttractionDetail(attraction) {
+  const sheet = document.getElementById('map-detail-sheet');
+  const isPaid = attraction.ticket_type === 'paid';
+  document.getElementById('sheet-header-text').innerHTML = `<span class="sheet-tag">景点</span>`;
+  document.getElementById('sheet-body').innerHTML = `
+    <img class="sheet-cover" src="${escapeHtml(attraction.cover_image)}" alt="${escapeHtml(attraction.name)}" onerror="this.style.display='none'"/>
+    <h2 class="sheet-title">${escapeHtml(attraction.name)}</h2>
+    <div class="sheet-meta-row">
+      <span class="sheet-tag ${isPaid ? 'paid' : ''}">${isPaid ? '付费 ' + attraction.price : '免费'}</span>
+      <span>🕐 ${attraction.hours}</span>
+    </div>
+    <div class="sheet-highlights">${escapeHtml(attraction.highlights)}</div>
+    ${isPaid && attraction.booking_url ? `<a class="sheet-btn" href="${escapeHtml(attraction.booking_url)}" target="_blank" rel="noopener">预约官网 →</a>` : ''}
+  `;
+  sheet.classList.add('open');
+}
+
+function openMealDetail(mealSlot, dayNum) {
+  const sheet = document.getElementById('map-detail-sheet');
+  const labels = { breakfast: '早餐', lunch: '午餐', dinner: '晚餐' };
+  const restaurants = (mealSlot.restaurants || []).slice().sort((a, b) => b.rating - a.rating);
+
+  document.getElementById('sheet-header-text').innerHTML = `
+    <span class="sheet-tag" style="background:rgba(181,101,69,0.15);color:var(--accent2)">美食</span>
+    <div style="font-weight:700;font-size:15px;margin-top:4px">第${dayNum}天 · ${labels[mealSlot.slotKey] || mealSlot.time_label}</div>
+    <div style="font-size:11px;color:var(--ink3)">${mealSlot.area || ''}</div>
+  `;
+
+  const listHtml = restaurants.map((r, i) => `
+    <a class="restaurant-card" href="${escapeHtml(r.dianping_url)}" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit">
+      <div class="dianping-badge">大众点评 · 推荐 ${i + 1}</div>
+      <div class="r-name">${escapeHtml(r.name)}</div>
+      <div class="r-rating">★ ${r.rating} <span style="font-weight:400;color:var(--ink3)">(${r.review_count}条)</span></div>
+      <div class="r-meta">${escapeHtml(r.cuisine)} · ${escapeHtml(r.price_per_person)} · ${escapeHtml(r.distance)}</div>
+      <div class="r-meta" style="color:var(--accent2);margin-top:4px">招牌：${escapeHtml(r.highlight_dish)}</div>
+    </a>
+  `).join('');
+
+  document.getElementById('sheet-body').innerHTML = `
+    <p style="font-size:12px;color:var(--ink2);margin-bottom:12px">按评分从高到低排序，共 ${restaurants.length} 家</p>
+    ${listHtml || '<p>暂无餐厅数据</p>'}
+  `;
+  sheet.classList.add('open');
+}
+
+function renderDayDetailMap(dayNum) {
+  const day = currentDayDetails?.find(d => d.day === dayNum);
+  if (!day) return;
+
+  closeDetailSheet();
+  const hint = document.getElementById('map-day-hint');
+  hint.classList.add('active');
+  document.getElementById('map-day-hint-title').textContent = `第${dayNum}天 · ${day.city} 游览子路线`;
+  document.getElementById('map-day-hint-body').textContent = day.sub_route_summary || '';
+
+  const points = [];
+
+  (day.attractions || []).forEach((a, idx) => {
+    if (!a.latlng) return;
+    points.push(a.latlng);
+    const m = L.marker(a.latlng, {
+      icon: L.divIcon({ className: 'map-label-icon', html: `<div class="pin-attraction" title="${a.name}">${idx + 1}</div>`, iconAnchor: [14, 14] }),
+      zIndexOffset: 800,
+    });
+    m.on('click', () => openAttractionDetail(a));
+    addMapLayer(m);
+  });
+
+  if (day.attractions?.length > 1) {
+    const attrPoints = day.attractions.filter(a => a.latlng).map(a => a.latlng);
+    const line = L.polyline(attrPoints, { color: '#5B4E8A', weight: 4, opacity: 0.75, dashArray: '6 8' });
+    addMapLayer(line);
+    if (typeof L.polylineDecorator === 'function') {
+      addMapLayer(L.polylineDecorator(line, {
+        patterns: [{ offset: '20%', repeat: '35%', symbol: L.Symbol.arrowHead({ pixelSize: 9, pathOptions: { color: '#5B4E8A', weight: 2 } }) }],
+      }));
+    }
+  }
+
+  const mealSlots = [
+    { key: 'breakfast', label: '早' },
+    { key: 'lunch', label: '午' },
+    { key: 'dinner', label: '晚' },
+  ];
+  mealSlots.forEach(({ key, label }) => {
+    const slot = day.meals?.[key];
+    if (!slot?.anchor_latlng) return;
+    points.push(slot.anchor_latlng);
+    const mealData = { ...slot, slotKey: key };
+    const m = L.marker(slot.anchor_latlng, {
+      icon: L.divIcon({ className: 'map-label-icon', html: `<div class="pin-meal">${label}</div>`, iconAnchor: [13, 13] }),
+      zIndexOffset: 700,
+    });
+    m.on('click', () => openMealDetail(mealData, dayNum));
+    addMapLayer(m);
+  });
+
+  if (points.length) map.fitBounds(L.latLngBounds(points).pad(0.25));
 }
 
 function generateGeodesicLinePoints(fromArr, toArr, curveOffset) {
@@ -472,7 +714,9 @@ function renderPlanDetailCards() {
 function selectPlan(idx) {
   selectedPlanIndex = idx;
   currentSkillResponse = planOptions[idx];
+  currentDayDetails = null;
   renderPlanDetailCards();
+  loadDayDetailsForPlan();
   switchMapSandboxView('overview');
   const card = document.querySelector(`.plan-detail-card[data-idx="${idx}"]`);
   if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -647,45 +891,28 @@ function renderIntegratedRouteOverview(data) {
 }
 
 function switchMapSandboxView(viewType) {
-  document.querySelectorAll('.map-nav-tab').forEach(t => t.classList.remove('active'));
+  currentMapView = viewType;
+  document.querySelectorAll('.map-nav-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.view === viewType);
+  });
   clearMapLayers();
+  closeDetailSheet();
   if (!currentSkillResponse || !map) return;
-  const data = currentSkillResponse;
-  const pane = document.getElementById('map-floating-pane');
 
   if (viewType === 'overview') {
-    document.getElementById('tab-geo-overview').classList.add('active');
-    renderIntegratedRouteOverview(data);
-  } else if (viewType === 'roundtrip') {
-    document.getElementById('tab-geo-roundtrip').classList.add('active');
-    pane.classList.add('active');
-    pane.innerHTML = `
-      <div class="micro-pane-title">✈️ 往返大交通</div>
-      <div class="micro-detail-item"><b>去程：</b>${data.roundtrip?.outbound?.method}<br/>${data.roundtrip?.outbound?.duration} · ${data.roundtrip?.outbound?.price_ref}</div>
-      <div class="micro-detail-item"><b>回程：</b>${data.roundtrip?.return?.method}<br/>${data.roundtrip?.return?.duration} · ${data.roundtrip?.return?.price_ref}</div>
-    `;
-  } else if (viewType === 'stay') {
-    document.getElementById('tab-geo-stay').classList.add('active');
-    pane.classList.add('active');
-    pane.innerHTML = `<div class="micro-pane-title">🏨 留宿布局</div>` +
-      (data.accommodation || []).map(acc => `
-        <div class="micro-detail-item">
-          <div style="font-weight:700;color:var(--accent2)">${acc.nights_label} · ${acc.location}</div>
-          <div style="font-size:11px;margin-top:2px"><b>${acc.type}</b> · ${acc.price_range}</div>
-          <div style="font-size:11px;color:var(--ink2);margin-top:4px">${acc.reason}</div>
-        </div>
-      `).join('');
-  } else if (viewType === 'segment') {
-    document.getElementById('tab-geo-segment').classList.add('active');
-    pane.classList.add('active');
-    pane.innerHTML = `<div class="micro-pane-title">🚗 城际转场</div>` +
-      (data.segment_transport || []).map(seg => `
-        <div class="micro-detail-item">
-          <div style="font-weight:700">${seg.from} ➔ ${seg.to}</div>
-          <div style="font-size:11px;color:var(--accent);margin-top:2px">${seg.method}${seg.self_drive_rec ? ' · 推荐自驾' : ''}</div>
-          <div style="font-size:11px;color:var(--ink2);margin-top:4px">${seg.reason}</div>
-        </div>
-      `).join('');
+    renderIntegratedRouteOverview(currentSkillResponse);
+    return;
+  }
+
+  if (viewType.startsWith('day-')) {
+    const dayNum = parseInt(viewType.replace('day-', ''), 10);
+    if (!currentDayDetails?.length) {
+      document.getElementById('map-day-hint').classList.add('active');
+      document.getElementById('map-day-hint-title').textContent = `第${dayNum}天`;
+      document.getElementById('map-day-hint-body').textContent = dayDetailsLoading ? '分天详情生成中…' : '暂无数据';
+      return;
+    }
+    renderDayDetailMap(dayNum);
   }
 }
 </script>

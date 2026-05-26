@@ -55,6 +55,10 @@ const server = createServer(async (req, res) => {
     const { default: handler } = await import('./api/generate.js');
     return handleApi(req, res, handler);
   }
+  if (url.pathname === '/api/day_detail') {
+    const { default: handler } = await import('./api/day_detail.js');
+    return handleApi(req, res, handler);
+  }
 
   let filePath = join(__dirname, 'public', url.pathname === '/' ? 'index.html' : url.pathname);
   if (!existsSync(filePath)) filePath = join(__dirname, 'public', 'index.html');
