@@ -457,9 +457,9 @@ let map = null, markerLayers = [], polylineLayers = [];
 let planOptions = [], selectedPlanIndex = 0, currentSkillResponse = null;
 let lastSearchPayload = {};
 let dayDetailCache = {};
-let currentDayDetails = null;
 let currentMapView = 'overview';
-let dayDetailsLoading = false;
+let dayDetailLoadingDay = null;
+let lastDayDetailError = '';
 let activeRouteNodeIdx = null;
 
 function escapeHtml(str) {
@@ -548,16 +548,21 @@ function getPlanCacheKey() {
   return `plan_${selectedPlanIndex}`;
 }
 
-async function loadDayDetailsForPlan() {
-  const key = getPlanCacheKey();
-  if (dayDetailCache[key]) {
-    currentDayDetails = dayDetailCache[key];
-    buildMapDayTabs();
-    return;
-  }
-  if (dayDetailsLoading) return;
-  dayDetailsLoading = true;
-  buildMapDayTabs(true);
+function getDayCacheKey(dayNum) {
+  return `${getPlanCacheKey()}_d${dayNum}`;
+}
+
+function getCachedDay(dayNum) {
+  return dayDetailCache[getDayCacheKey(dayNum)] || null;
+}
+
+async function ensureDayLoaded(dayNum) {
+  const cacheKey = getDayCacheKey(dayNum);
+  if (dayDetailCache[cacheKey]) return dayDetailCache[cacheKey];
+
+  if (dayDetailLoadingDay === dayNum) return null;
+  dayDetailLoadingDay = dayNum;
+  lastDayDetailError = '';
 
   try {
     const res = await fetch('/api/day_detail', {
@@ -565,6 +570,7 @@ async function loadDayDetailsForPlan() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         plan: currentSkillResponse,
+        day: dayNum,
         days: lastSearchPayload.days || 7,
         travelers: lastSearchPayload.travelers || 2,
         destination: lastSearchPayload.destination,
@@ -572,18 +578,26 @@ async function loadDayDetailsForPlan() {
       }),
     });
     const data = await res.json();
-    currentDayDetails = data.days || [];
-    dayDetailCache[key] = currentDayDetails;
-  } catch (e) {
-    currentDayDetails = [];
-  } finally {
-    dayDetailsLoading = false;
-    buildMapDayTabs(false);
-    if (currentMapView.startsWith('day-')) {
-      const dayNum = parseInt(currentMapView.replace('day-', ''), 10);
-      renderDayDetailMap(dayNum);
+    if (data.error) {
+      lastDayDetailError = data.error;
+      return null;
     }
+    const day = (data.days || []).find(d => d.day === dayNum) || data.days?.[0];
+    if (day) dayDetailCache[cacheKey] = day;
+    else lastDayDetailError = '当天数据为空';
+    return day || null;
+  } catch (e) {
+    lastDayDetailError = '网络请求失败，请稍后重试';
+    return null;
+  } finally {
+    dayDetailLoadingDay = null;
   }
+}
+
+function loadDayDetailsForPlan() {
+  dayDetailCache = {};
+  lastDayDetailError = '';
+  buildMapDayTabs(false);
 }
 
 function buildMapDayTabs(isLoading = false) {
@@ -644,12 +658,19 @@ function openMealDetail(mealSlot, dayNum) {
   sheet.classList.add('open');
 }
 
-function renderDayDetailMap(dayNum) {
-  const day = currentDayDetails?.find(d => d.day === dayNum);
-  if (!day) return;
+async function renderDayDetailMap(dayNum) {
+  const hint = document.getElementById('map-day-hint');
+  hint.classList.add('active');
+  document.getElementById('map-day-hint-title').textContent = `第${dayNum}天`;
+  document.getElementById('map-day-hint-body').textContent = '加载中…';
+
+  const day = await ensureDayLoaded(dayNum);
+  if (!day) {
+    document.getElementById('map-day-hint-body').textContent = lastDayDetailError || '暂无数据';
+    return;
+  }
 
   closeDetailSheet();
-  const hint = document.getElementById('map-day-hint');
   hint.classList.add('active');
   document.getElementById('map-day-hint-title').textContent = `第${dayNum}天 · ${day.city} 游览子路线`;
   document.getElementById('map-day-hint-body').textContent = day.sub_route_summary || '';
@@ -750,8 +771,8 @@ async function executeRoutePlannerSkill() {
     renderPlanDetailCards();
     selectPlan(0);
     initSandboxMap();
-    buildMapDayTabs(true);
     document.getElementById('map-navigation-bar').classList.add('active');
+    buildMapDayTabs(false);
     setTimeout(() => { if (map) map.invalidateSize(); }, 100);
   } catch (e) {
     alert('路线生成失败，请稍后重试');
@@ -806,7 +827,7 @@ function renderPlanDetailCards() {
 function selectPlan(idx) {
   selectedPlanIndex = idx;
   currentSkillResponse = planOptions[idx];
-  currentDayDetails = null;
+  dayDetailCache = {};
   renderPlanDetailCards();
   loadDayDetailsForPlan();
   switchMapSandboxView('overview');
@@ -1018,12 +1039,6 @@ function switchMapSandboxView(viewType) {
 
   if (viewType.startsWith('day-')) {
     const dayNum = parseInt(viewType.replace('day-', ''), 10);
-    if (!currentDayDetails?.length) {
-      document.getElementById('map-day-hint').classList.add('active');
-      document.getElementById('map-day-hint-title').textContent = `第${dayNum}天`;
-      document.getElementById('map-day-hint-body').textContent = dayDetailsLoading ? '分天详情生成中…' : '暂无数据';
-      return;
-    }
     renderDayDetailMap(dayNum);
   }
 }

@@ -1,11 +1,8 @@
+export const config = { maxDuration: 60 };
+
 const RESTAURANT_SCHEMA = `{
-      "name": "餐厅名",
-      "rating": 4.8,
-      "review_count": 1200,
-      "price_per_person": "￥80",
-      "cuisine": "菜系",
-      "distance": "距参考点约300m",
-      "highlight_dish": "招牌菜",
+      "name": "餐厅名", "rating": 4.8, "review_count": 1200, "price_per_person": "￥80",
+      "cuisine": "菜系", "distance": "距参考点约300m", "highlight_dish": "招牌菜",
       "dianping_url": "https://www.dianping.com/search/keyword/城市/餐厅名"
     }`;
 
@@ -14,23 +11,13 @@ const DAY_SCHEMA = `{
     "city": "当日主城市",
     "sub_route_summary": "一句话概括当日游览子动线",
     "attractions": [{
-      "id": "d1_a1",
-      "name": "景点名",
-      "latlng": [25.04, 102.73],
+      "id": "d1_a1", "name": "景点名", "latlng": [25.04, 102.73],
       "cover_image": "https://placehold.co/480x280/4A5B4E/ffffff?text=景点",
-      "hours": "08:30-18:00",
-      "highlights": "2-3句核心亮点",
-      "ticket_type": "free 或 paid",
-      "price": "免费 或 ￥xx",
-      "booking_url": "预约官网URL，免费景点可为空字符串"
+      "hours": "08:30-18:00", "highlights": "核心亮点", "ticket_type": "free",
+      "price": "免费", "booking_url": ""
     }],
     "meals": {
-      "breakfast": {
-        "time_label": "早餐",
-        "area": "用餐区域",
-        "anchor_latlng": [25.04, 102.73],
-        "restaurants": [${RESTAURANT_SCHEMA}]
-      },
+      "breakfast": { "time_label": "早餐", "area": "区域", "anchor_latlng": [25.04, 102.73], "restaurants": [${RESTAURANT_SCHEMA}] },
       "lunch": { "time_label": "午餐", "area": "", "anchor_latlng": [25.05, 102.74], "restaurants": [] },
       "dinner": { "time_label": "晚餐", "area": "", "anchor_latlng": [25.06, 102.75], "restaurants": [] }
     }
@@ -48,40 +35,43 @@ export default async function handler(req, res) {
     let body = req.body;
     if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) {} }
 
-    const { plan, days, travelers, destination, start_point } = body;
+    const { plan, days, day: singleDay, travelers, destination, start_point } = body;
     const totalDays = Math.min(Math.max(parseInt(days, 10) || 3, 1), 14);
+    const targetDay = singleDay ? Math.min(Math.max(parseInt(singleDay, 10), 1), totalDays) : null;
 
     const apiKey = process.env.DEEPSEEK_API_KEY;
-    if (!apiKey) return res.status(200).json({ error: 'API KEY Missing', days: [] });
+    if (!apiKey) {
+      return res.status(200).json({ days: [], error: '未配置 DEEPSEEK_API_KEY，请在 Vercel 环境变量中添加' });
+    }
 
     const nodesStr = (plan?.nodes || []).map(n => `${n.city}(${n.nights}晚)`).join(' → ');
 
+    const dayScope = targetDay
+      ? `只生成第 ${targetDay} 天（共 ${totalDays} 天行程中的第 ${targetDay} 天）`
+      : `生成第 1 到第 ${totalDays} 天，days 数组长度必须等于 ${totalDays}`;
+
     const prompt = `# 角色
-你是 Mappd 分天行程规划师，输出可落地的一日详细攻略 JSON。
+你是 Mappd 分天行程规划师，输出 JSON。
 
 # 行程上下文
 - 出发城市：${start_point || '未知'}
 - 目的地：${destination || '未知'}
-- 总天数：${totalDays} 天（必须输出恰好 ${totalDays} 天的 days 数组）
+- 总天数：${totalDays} 天
 - 人数：${travelers || 2} 人
-- 已选方案标题：${plan?.headline || ''}
+- 方案：${plan?.headline || ''}
 - 宏观动线：${plan?.route_overview || nodesStr}
 
-# 输出要求
-1. 每天安排 2-4 个景点，按合理游览顺序排列；latlng 为真实经纬度
-2. 每日 meals 含 breakfast / lunch / dinner，各含恰好 5 家餐厅
-3. 餐厅按 rating 从高到低排序，模拟大众点评数据（评分 4.0-5.0，review_count 合理）
-4. dianping_url 格式：https://www.dianping.com/search/keyword/{城市编码}/{餐厅名编码} 或合理搜索链接
-5. 景点 ticket_type 仅 "free" 或 "paid"；paid 须填 price 和 booking_url
-6. cover_image 可用 https://placehold.co/480x280/4A5B4E/ffffff?text=景点名 形式
-7. meals 的 anchor_latlng 放在当日景点聚集区附近
-8. 美食节点与景点节点经纬度不要完全相同
+# 任务
+${dayScope}
 
-# 输出格式（仅 JSON，无 Markdown）
+# 输出要求
+1. 当天 2-3 个景点，真实 latlng
+2. meals 含 breakfast/lunch/dinner，每餐 5 家餐厅，rating 降序，模拟大众点评
+3. ticket_type 仅 free 或 paid
+
+# 输出（仅 JSON）
 {
-  "days": [
-    ${DAY_SCHEMA}
-  ]
+  "days": [${DAY_SCHEMA}${targetDay ? '' : ` ...共${totalDays}项`}]
 }`;
 
     const response = await fetch('https://api.deepseek.com/chat/completions', {
@@ -95,22 +85,31 @@ export default async function handler(req, res) {
       }),
     });
 
+    if (!response.ok) {
+      const errText = await response.text();
+      return res.status(200).json({ days: [], error: `DeepSeek 请求失败: ${response.status}` , detail: errText.slice(0, 200) });
+    }
+
     const data = await response.json();
-    let text = data.choices?.[0]?.message?.content?.trim() || '{}';
+    if (!data.choices?.[0]?.message?.content) {
+      return res.status(200).json({ days: [], error: 'AI 未返回内容', detail: JSON.stringify(data).slice(0, 200) });
+    }
+
+    let text = data.choices[0].message.content.trim();
     if (text.startsWith('```')) {
       text = text.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/\s*```$/, '');
     }
 
     const parsed = JSON.parse(text);
-    let days = Array.isArray(parsed.days) ? parsed.days : [];
+    let daysList = Array.isArray(parsed.days) ? parsed.days : (parsed.day ? [parsed] : []);
 
-    days = days.slice(0, totalDays).map((d, i) => normalizeDay(d, i + 1, destination));
+    daysList = daysList.map((d, i) => normalizeDay(d, targetDay || d.day || i + 1, destination));
 
-    while (days.length < totalDays) {
-      days.push(normalizeDay({ city: destination, attractions: [], meals: {} }, days.length + 1, destination));
+    if (targetDay && daysList.length === 0) {
+      daysList = [normalizeDay({ city: destination }, targetDay, destination)];
     }
 
-    return res.status(200).json({ days });
+    return res.status(200).json({ days: daysList });
   } catch (error) {
     return res.status(200).json({ days: [], error: error.message });
   }
