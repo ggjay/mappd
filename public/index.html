@@ -41,14 +41,15 @@
   }
   .welcome-logo .logo-mark i { color: var(--surface); font-size: 20px; }
 
-  /* —— 结果页 —— */
-  .page-results { display: none; grid-template-columns: 480px 1fr; height: 100vh; overflow: hidden; }
+  /* —— 结果页：双方案详情卡片 —— */
+  .page-results { display: none; grid-template-columns: minmax(420px, 50%) 1fr; height: 100vh; overflow: hidden; }
   .page-results.active { display: grid; }
 
   .panel { background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
-  .panel-top { padding: 16px 24px; flex-shrink: 0; border-bottom: 1px solid var(--border2); display: flex; align-items: center; justify-content: space-between; }
-  .panel-top-title { font-family: 'DM Serif Display', serif; font-size: 18px; }
-  .back-link { font-size: 12px; color: var(--ink2); cursor: pointer; background: none; border: none; font-family: inherit; display: flex; align-items: center; gap: 4px; }
+  .panel-top { padding: 14px 20px; flex-shrink: 0; border-bottom: 1px solid var(--border2); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .panel-top-title { font-family: 'DM Serif Display', serif; font-size: 17px; line-height: 1.3; }
+  .panel-top-sub { font-size: 11px; color: var(--ink3); margin-top: 2px; }
+  .back-link { font-size: 12px; color: var(--ink2); cursor: pointer; background: none; border: none; font-family: inherit; display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
   .back-link:hover { color: var(--accent2); }
 
   .input-group { margin-bottom: 10px; }
@@ -74,44 +75,89 @@
   .gen-btn.loading .btn-text { display: none; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  .results-scroll { flex: 1; overflow-y: auto; padding: 16px 24px 24px; scroll-behavior: smooth; }
+  .results-scroll { flex: 1; overflow-y: auto; padding: 14px 16px 20px; scroll-behavior: smooth; }
   .results-scroll::-webkit-scrollbar { width: 4px; }
   .results-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-  .options-label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--ink3); letter-spacing: 0.8px; margin-bottom: 10px; }
-  .plan-options-row { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+  .plan-cards-stack { display: flex; flex-direction: column; gap: 14px; }
 
-  .plan-option-card {
+  .plan-detail-card {
     background: #fff; border: 2px solid var(--border); border-radius: var(--radius);
-    padding: 14px 16px; cursor: pointer; transition: all 0.2s; position: relative;
+    padding: 18px 18px 16px; cursor: pointer; transition: all 0.22s; position: relative;
   }
-  .plan-option-card:hover { border-color: rgba(74,91,78,0.35); }
-  .plan-option-card.selected {
-    border-color: var(--accent); background: var(--accent-light);
-    box-shadow: 0 4px 16px rgba(74,91,78,0.12);
+  .plan-detail-card:hover { border-color: rgba(74,91,78,0.35); }
+  .plan-detail-card.selected {
+    border-color: var(--accent); background: linear-gradient(180deg, #fff 0%, var(--accent-light) 100%);
+    box-shadow: 0 8px 28px rgba(74,91,78,0.14);
   }
-  .plan-option-card .option-badge {
-    display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.6px; color: var(--accent); margin-bottom: 6px;
+  .plan-detail-card:not(.selected) { opacity: 0.78; }
+  .plan-detail-card:not(.selected):hover { opacity: 0.95; }
+
+  .detail-card-top {
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
+    margin-bottom: 10px; padding-right: 28px;
   }
-  .plan-option-card.selected .option-badge { color: var(--ink); }
-  .plan-option-headline { font-weight: 600; font-size: 14px; color: var(--ink); line-height: 1.35; margin-bottom: 6px; }
-  .plan-option-diff {
-    font-size: 11px; color: var(--accent2); background: rgba(181,101,69,0.08);
-    padding: 6px 8px; border-radius: 6px; margin-bottom: 8px; line-height: 1.4;
+  .detail-badge {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.5px; color: var(--accent);
+    text-transform: uppercase; margin-bottom: 4px;
   }
-  .plan-option-meta { font-size: 11px; color: var(--ink2); display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-  .plan-option-price { font-weight: 700; color: var(--accent); white-space: nowrap; }
-  .plan-option-check {
-    position: absolute; top: 14px; right: 14px; width: 20px; height: 20px;
-    border: 2px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    font-size: 11px; color: transparent; transition: all 0.2s;
+  .plan-detail-card.selected .detail-badge { color: var(--ink); }
+  .detail-headline {
+    font-family: 'DM Serif Display', serif; font-size: 19px; font-weight: 600;
+    color: var(--ink); line-height: 1.3;
   }
-  .plan-option-card.selected .plan-option-check {
-    background: var(--accent); border-color: var(--accent); color: #fff;
+  .detail-price {
+    font-size: 13px; font-weight: 700; color: var(--accent2); white-space: nowrap;
+    background: rgba(181,101,69,0.08); padding: 6px 10px; border-radius: 6px;
+  }
+  .detail-check {
+    position: absolute; top: 16px; right: 16px; width: 22px; height: 22px;
+    border: 2px solid var(--border); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; color: transparent; transition: all 0.2s;
+  }
+  .plan-detail-card.selected .detail-check { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .detail-viewing {
+    display: none; font-size: 10px; font-weight: 700; color: #fff; background: var(--accent);
+    padding: 2px 8px; border-radius: 4px; margin-left: 8px; vertical-align: middle;
+  }
+  .plan-detail-card.selected .detail-viewing { display: inline-block; }
+
+  .detail-diff {
+    font-size: 11px; color: var(--accent2); background: rgba(181,101,69,0.07);
+    padding: 8px 10px; border-radius: 6px; line-height: 1.45; margin-bottom: 12px;
+    border-left: 3px solid var(--accent2);
+  }
+  .detail-route {
+    font-size: 12px; font-weight: 600; color: var(--ink2); margin-bottom: 12px;
+    padding: 8px 10px; background: var(--bg); border-radius: 6px;
+  }
+  .detail-section-label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--ink3);
+    letter-spacing: 0.6px; margin-bottom: 6px; margin-top: 12px;
+  }
+  .detail-logic {
+    font-size: 12px; color: var(--ink); line-height: 1.5;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .detail-nodes { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+  .detail-node {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--bg); border-radius: 6px; padding: 7px 10px; font-size: 12px;
+  }
+  .detail-node-city { font-weight: 600; }
+  .detail-node-nights { font-size: 10px; background: var(--ink); color: #fff; padding: 2px 6px; border-radius: 8px; font-weight: 700; }
+  .detail-cost-row {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border2);
+    font-size: 12px;
+  }
+  .detail-cost-total { font-weight: 700; font-size: 14px; color: var(--accent2); }
+  .detail-alert {
+    margin-top: 10px; font-size: 11px; color: #C53030; background: #FFF5F5;
+    border: 1px solid #FEB2B2; padding: 8px 10px; border-radius: 6px; line-height: 1.4;
   }
 
-  .plan-manifest-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); }
   .manifest-headline { font-family: 'DM Serif Display', serif; font-size: 20px; font-weight: 600; color: var(--ink); line-height: 1.3; margin-bottom: 10px; }
   .tag-capsule-container { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
   .tag-capsule { background: var(--bg); color: var(--ink2); font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
@@ -212,13 +258,14 @@
 <div id="page-results" class="page-results">
   <div class="panel">
     <div class="panel-top">
-      <span class="panel-top-title">推荐路线</span>
+      <div>
+        <div class="panel-top-title">推荐路线</div>
+        <div class="panel-top-sub">点击卡片切换，地图同步动线</div>
+      </div>
       <button class="back-link" onclick="goToWelcome()"><i class="ti ti-arrow-left"></i> 重新填写</button>
     </div>
     <div class="results-scroll">
-      <div class="options-label">请选择方案（共 2 套）</div>
-      <div class="plan-options-row" id="plan-options-row"></div>
-      <div id="manifest-content-area"></div>
+      <div class="plan-cards-stack" id="plan-cards-stack"></div>
     </div>
   </div>
 
@@ -336,7 +383,7 @@ async function executeRoutePlannerSkill() {
 
     selectedPlanIndex = 0;
     showResultsPage();
-    renderPlanOptionCards();
+    renderPlanDetailCards();
     selectPlan(0);
     initSandboxMap();
     document.getElementById('map-navigation-bar').classList.add('active');
@@ -349,67 +396,55 @@ async function executeRoutePlannerSkill() {
   }
 }
 
-function renderPlanOptionCards() {
-  const row = document.getElementById('plan-options-row');
-  row.innerHTML = planOptions.map((plan, idx) => `
-    <div class="plan-option-card ${idx === selectedPlanIndex ? 'selected' : ''}" onclick="selectPlan(${idx})" data-idx="${idx}">
-      <div class="plan-option-check"><i class="ti ti-check"></i></div>
-      <div class="option-badge">${plan.option_label || '方案 ' + (idx + 1)}</div>
-      <div class="plan-option-headline">${getPlanHeadline(plan)}</div>
-      ${plan.diff_highlight ? `<div class="plan-option-diff">${plan.diff_highlight}</div>` : ''}
-      <div class="plan-option-meta">
-        <span>${plan.route_overview || ''}</span>
-        <span class="plan-option-price">￥${plan.cost_estimate?.total_per_person || '—'}/人</span>
-      </div>
+function buildPlanDetailCardHtml(plan, idx) {
+  const selected = idx === selectedPlanIndex;
+  const tags = (plan.experience_tags || []).map(t => `<span class="tag-capsule"># ${t}</span>`).join('');
+  const nodes = (plan.nodes || []).map(n => `
+    <div class="detail-node">
+      <span class="detail-node-city">📍 ${n.city}</span>
+      <span class="detail-node-nights">${n.nights} 晚</span>
     </div>
   `).join('');
+  const ce = plan.cost_estimate || {};
+
+  return `
+    <div class="plan-detail-card ${selected ? 'selected' : ''}" onclick="selectPlan(${idx})" data-idx="${idx}">
+      <div class="detail-check"><i class="ti ti-check"></i></div>
+      <div class="detail-card-top">
+        <div>
+          <div class="detail-badge">${plan.option_label || '方案 ' + (idx + 1)}<span class="detail-viewing">地图中</span></div>
+          <div class="detail-headline">${getPlanHeadline(plan)}</div>
+        </div>
+        <div class="detail-price">￥${ce.total_per_person || '—'}<span style="font-size:10px;font-weight:500;color:var(--ink3)">/人</span></div>
+      </div>
+      ${plan.diff_highlight ? `<div class="detail-diff">${plan.diff_highlight}</div>` : ''}
+      ${tags ? `<div class="tag-capsule-container" style="margin-bottom:0">${tags}</div>` : ''}
+      <div class="detail-route">${plan.route_overview || ''}</div>
+      <div class="detail-section-label">决策逻辑</div>
+      <div class="detail-logic">${plan.planning_logic || ''}</div>
+      <div class="detail-section-label">动线节点</div>
+      <div class="detail-nodes">${nodes}</div>
+      <div class="detail-cost-row">
+        <span style="color:var(--ink2)">大交通 ￥${ce.transport || '—'} · 住宿 ￥${ce.accommodation || '—'}</span>
+        <span class="detail-cost-total">人均 ￥${ce.total_per_person || '—'}</span>
+      </div>
+      ${plan.peak_season_alert ? `<div class="detail-alert"><i class="ti ti-alert-triangle"></i> ${plan.peak_season_alert}</div>` : ''}
+    </div>
+  `;
+}
+
+function renderPlanDetailCards() {
+  document.getElementById('plan-cards-stack').innerHTML =
+    planOptions.map((plan, idx) => buildPlanDetailCardHtml(plan, idx)).join('');
 }
 
 function selectPlan(idx) {
   selectedPlanIndex = idx;
   currentSkillResponse = planOptions[idx];
-  document.querySelectorAll('.plan-option-card').forEach((el, i) => {
-    el.classList.toggle('selected', i === idx);
-  });
-  renderLeftManifest(currentSkillResponse);
+  renderPlanDetailCards();
   switchMapSandboxView('overview');
-}
-
-function renderLeftManifest(data) {
-  const container = document.getElementById('manifest-content-area');
-  const tags = (data.experience_tags || []).map(t => `<span class="tag-capsule"># ${t}</span>`).join('');
-  const nodes = (data.nodes || []).map(n => `
-    <div class="node-timeline-item">
-      <div>
-        <div class="node-city">📍 ${n.city}</div>
-        <div style="font-size:11px;color:var(--ink2);margin-top:2px">${n.core_value}</div>
-      </div>
-      <div class="node-nights">${n.nights} 晚</div>
-    </div>
-  `).join('');
-  const ce = data.cost_estimate || {};
-
-  container.innerHTML = `
-    <div class="plan-manifest-card">
-      <div class="manifest-headline">${getPlanHeadline(data)}</div>
-      <div class="tag-capsule-container">${tags}</div>
-      <div class="section-subtitle"><i class="ti ti-git-branch"></i> 决策取舍逻辑</div>
-      <div class="logic-callout-box">${data.planning_logic}</div>
-      <div class="section-subtitle"><i class="ti ti-map-pins"></i> 动线节点</div>
-      <div style="font-size:12px;font-weight:600;color:var(--accent2);margin-bottom:10px">${data.route_overview}</div>
-      <div>${nodes}</div>
-      <div class="section-subtitle"><i class="ti ti-coin"></i> 财务精算</div>
-      <table class="finance-table">
-        <tr><td>大交通</td><td class="finance-price-val">￥${ce.transport}</td></tr>
-        <tr><td>住宿</td><td class="finance-price-val">￥${ce.accommodation}</td></tr>
-        <tr><td>餐饮</td><td class="finance-price-val">￥${ce.food}</td></tr>
-        <tr><td>门票</td><td class="finance-price-val">￥${ce.attraction}</td></tr>
-        <tr style="font-weight:700"><td style="border:none;padding-top:10px">人均总计</td><td class="finance-price-val" style="border:none;padding-top:10px;color:var(--accent2)">￥${ce.total_per_person}</td></tr>
-      </table>
-      <div style="font-size:10px;color:var(--ink3);margin-top:6px;font-style:italic">* ${ce.note}</div>
-      ${data.peak_season_alert ? `<div class="season-alert-banner"><i class="ti ti-alert-triangle"></i> <b>旺季提示：</b>${data.peak_season_alert}</div>` : ''}
-    </div>
-  `;
+  const card = document.querySelector(`.plan-detail-card[data-idx="${idx}"]`);
+  if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function switchMapSandboxView(viewType) {
