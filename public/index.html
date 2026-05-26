@@ -263,15 +263,19 @@
   .map-day-hint.active { display: block; }
   .map-day-hint-title { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
 
-  .pin-attraction {
-    width: 28px; height: 28px; background: #5B4E8A; color: #fff; border-radius: 6px;
-    display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700;
-    border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.2); cursor: pointer;
+  .map-node-mini-card {
+    width: 132px; background: #fff; border-radius: 8px; padding: 8px 10px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.14); border: 1px solid var(--border);
+    cursor: pointer; transition: box-shadow 0.15s, transform 0.15s;
   }
-  .pin-meal {
-    width: 26px; height: 26px; background: var(--accent2); color: #fff; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700;
-    border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.2); cursor: pointer;
+  .map-node-mini-card:hover { box-shadow: 0 6px 22px rgba(0,0,0,0.2); transform: translateY(-2px); }
+  .map-node-attraction { border-left: 3px solid #5B4E8A; }
+  .map-node-meal { border-left: 3px solid var(--accent2); }
+  .map-node-stay { border-left: 3px solid var(--accent); background: var(--accent-light); }
+  .mini-type { font-size: 9px; font-weight: 700; color: var(--ink3); letter-spacing: 0.4px; }
+  .mini-title {
+    font-size: 11px; font-weight: 700; color: var(--ink); line-height: 1.35; margin-top: 3px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   }
 
   .map-detail-sheet {
@@ -291,9 +295,21 @@
   }
   .sheet-body { flex: 1; overflow-y: auto; padding: 16px; }
   .sheet-cover {
-    width: 100%; height: 160px; object-fit: cover; border-radius: var(--radius-sm); margin-bottom: 14px;
-    background: var(--bg);
+    width: 100%; height: 180px; object-fit: cover; border-radius: var(--radius-sm); margin-bottom: 14px;
+    background: var(--bg); display: block;
   }
+  .sheet-cover.is-broken { display: none !important; }
+  .sheet-cover-fallback {
+    width: 100%; height: 180px; border-radius: var(--radius-sm); margin-bottom: 14px;
+    background: linear-gradient(135deg, var(--accent-light), var(--bg));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Serif Display', serif; font-size: 48px; color: var(--accent);
+  }
+  .sheet-baike-label {
+    font-size: 10px; color: #2932E1; font-weight: 700; margin-bottom: 6px;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .sheet-baike-text { font-size: 13px; line-height: 1.6; color: var(--ink); margin-bottom: 12px; }
   .sheet-title { font-family: 'DM Serif Display', serif; font-size: 20px; line-height: 1.3; margin-bottom: 8px; }
   .sheet-meta-row { font-size: 12px; color: var(--ink2); margin-bottom: 6px; display: flex; gap: 8px; flex-wrap: wrap; }
   .sheet-tag {
@@ -613,19 +629,53 @@ function buildMapDayTabs(isLoading = false) {
   bar.innerHTML = html;
 }
 
+function createMiniCardMarker(latlng, nodeType, typeLabel, title, onClick) {
+  const typeClass = nodeType === 'meal' ? 'map-node-meal' : nodeType === 'stay' ? 'map-node-stay' : 'map-node-attraction';
+  const m = L.marker(latlng, {
+    icon: L.divIcon({
+      className: 'map-label-icon',
+      html: `<div class="map-node-mini-card ${typeClass}"><div class="mini-type">${escapeHtml(typeLabel)}</div><div class="mini-title">${escapeHtml(title)}</div></div>`,
+      iconAnchor: [66, 52],
+    }),
+    zIndexOffset: nodeType === 'stay' ? 850 : 800,
+  });
+  m.on('click', (e) => { L.DomEvent.stopPropagation(e); onClick(); });
+  addMapLayer(m);
+  return m;
+}
+
 function openAttractionDetail(attraction) {
   const sheet = document.getElementById('map-detail-sheet');
   const isPaid = attraction.ticket_type === 'paid';
+  const coverHtml = attraction.cover_image
+    ? `<img class="sheet-cover" src="${escapeHtml(attraction.cover_image)}" alt="${escapeHtml(attraction.name)}" referrerpolicy="no-referrer" onerror="this.classList.add('is-broken');this.nextElementSibling.style.display='flex'"/><div class="sheet-cover-fallback" style="display:none"><span>${escapeHtml(attraction.name.charAt(0))}</span></div>`
+    : `<div class="sheet-cover-fallback"><span>${escapeHtml(attraction.name.charAt(0))}</span></div>`;
+
   document.getElementById('sheet-header-text').innerHTML = `<span class="sheet-tag">景点</span>`;
   document.getElementById('sheet-body').innerHTML = `
-    <img class="sheet-cover" src="${escapeHtml(attraction.cover_image)}" alt="${escapeHtml(attraction.name)}" onerror="this.style.display='none'"/>
+    ${coverHtml}
     <h2 class="sheet-title">${escapeHtml(attraction.name)}</h2>
     <div class="sheet-meta-row">
-      <span class="sheet-tag ${isPaid ? 'paid' : ''}">${isPaid ? '付费 ' + attraction.price : '免费'}</span>
-      <span>🕐 ${attraction.hours}</span>
+      <span class="sheet-tag ${isPaid ? 'paid' : ''}">${isPaid ? '付费 ' + escapeHtml(attraction.price) : '免费'}</span>
+      <span>🕐 ${escapeHtml(attraction.hours)}</span>
     </div>
-    <div class="sheet-highlights">${escapeHtml(attraction.highlights)}</div>
+    <div class="sheet-baike-label">📖 百度百科 · 公开介绍</div>
+    <div class="sheet-baike-text">${escapeHtml(attraction.baike_summary || attraction.highlights || '')}</div>
+    <a class="sheet-btn" href="${escapeHtml(attraction.baike_url || '#')}" target="_blank" rel="noopener" style="background:#2932E1;margin-right:8px">查看百度百科 →</a>
     ${isPaid && attraction.booking_url ? `<a class="sheet-btn" href="${escapeHtml(attraction.booking_url)}" target="_blank" rel="noopener">预约官网 →</a>` : ''}
+  `;
+  sheet.classList.add('open');
+}
+
+function openStayDetail(stay, dayNum) {
+  const sheet = document.getElementById('map-detail-sheet');
+  document.getElementById('sheet-header-text').innerHTML = `<span class="sheet-tag">当日起点 · 住宿</span>`;
+  document.getElementById('sheet-body').innerHTML = `
+    <div class="sheet-cover-fallback" style="display:flex"><span>🏨</span></div>
+    <h2 class="sheet-title">${escapeHtml(stay.name)}</h2>
+    <div class="sheet-meta-row"><span>第${dayNum}天出发据点</span></div>
+    <div class="sheet-baike-text"><b>住宿类型：</b>${escapeHtml(stay.type)}<br/><b>区域：</b>${escapeHtml(stay.area)}<br/><b>参考价格：</b>${escapeHtml(stay.price_range)}</div>
+    <p style="font-size:12px;color:var(--ink2)">当日子路线由此出发，单向游览不折返。</p>
   `;
   sheet.classList.add('open');
 }
@@ -672,52 +722,52 @@ async function renderDayDetailMap(dayNum) {
 
   closeDetailSheet();
   hint.classList.add('active');
-  document.getElementById('map-day-hint-title').textContent = `第${dayNum}天 · ${day.city} 游览子路线`;
-  document.getElementById('map-day-hint-body').textContent = day.sub_route_summary || '';
+  const densityLabel = { high: '高密度', medium: '中密度', low: '低密度' }[day.route_density] || '';
+  document.getElementById('map-day-hint-title').textContent = `第${dayNum}天 · ${day.city}${densityLabel ? ' · ' + densityLabel : ''}`;
+  document.getElementById('map-day-hint-body').textContent =
+    (day.sub_route_chain ? `动线：${day.sub_route_chain}。` : '') + (day.sub_route_summary || '');
 
   const points = [];
+  const routeLine = [];
 
-  (day.attractions || []).forEach((a, idx) => {
+  if (day.day_start?.latlng) {
+    points.push(day.day_start.latlng);
+    routeLine.push(day.day_start.latlng);
+    createMiniCardMarker(day.day_start.latlng, 'stay', '住宿起点', day.day_start.name, () => openStayDetail(day.day_start, dayNum));
+  }
+
+  (day.attractions || []).forEach((a) => {
     if (!a.latlng) return;
     points.push(a.latlng);
-    const m = L.marker(a.latlng, {
-      icon: L.divIcon({ className: 'map-label-icon', html: `<div class="pin-attraction" title="${a.name}">${idx + 1}</div>`, iconAnchor: [14, 14] }),
-      zIndexOffset: 800,
-    });
-    m.on('click', () => openAttractionDetail(a));
-    addMapLayer(m);
+    routeLine.push(a.latlng);
+    createMiniCardMarker(a.latlng, 'attraction', '景点', a.name, () => openAttractionDetail(a));
   });
 
-  if (day.attractions?.length > 1) {
-    const attrPoints = day.attractions.filter(a => a.latlng).map(a => a.latlng);
-    const line = L.polyline(attrPoints, { color: '#5B4E8A', weight: 4, opacity: 0.75, dashArray: '6 8' });
+  if (routeLine.length > 1) {
+    const line = L.polyline(routeLine, { color: '#5B4E8A', weight: 4, opacity: 0.8 });
     addMapLayer(line);
     if (typeof L.polylineDecorator === 'function') {
       addMapLayer(L.polylineDecorator(line, {
-        patterns: [{ offset: '20%', repeat: '35%', symbol: L.Symbol.arrowHead({ pixelSize: 9, pathOptions: { color: '#5B4E8A', weight: 2 } }) }],
+        patterns: [{ offset: '15%', repeat: '30%', symbol: L.Symbol.arrowHead({ pixelSize: 9, pathOptions: { color: '#5B4E8A', weight: 2 } }) }],
       }));
     }
   }
 
   const mealSlots = [
-    { key: 'breakfast', label: '早' },
-    { key: 'lunch', label: '午' },
-    { key: 'dinner', label: '晚' },
+    { key: 'breakfast', label: '早餐' },
+    { key: 'lunch', label: '午餐' },
+    { key: 'dinner', label: '晚餐' },
   ];
   mealSlots.forEach(({ key, label }) => {
     const slot = day.meals?.[key];
     if (!slot?.anchor_latlng) return;
     points.push(slot.anchor_latlng);
+    const mealTitle = slot.area || slot.restaurants?.[0]?.name || label;
     const mealData = { ...slot, slotKey: key };
-    const m = L.marker(slot.anchor_latlng, {
-      icon: L.divIcon({ className: 'map-label-icon', html: `<div class="pin-meal">${label}</div>`, iconAnchor: [13, 13] }),
-      zIndexOffset: 700,
-    });
-    m.on('click', () => openMealDetail(mealData, dayNum));
-    addMapLayer(m);
+    createMiniCardMarker(slot.anchor_latlng, 'meal', label, mealTitle, () => openMealDetail(mealData, dayNum));
   });
 
-  if (points.length) map.fitBounds(L.latLngBounds(points).pad(0.25));
+  if (points.length) map.fitBounds(L.latLngBounds(points).pad(0.28));
 }
 
 function generateGeodesicLinePoints(fromArr, toArr, curveOffset) {
