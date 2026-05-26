@@ -234,7 +234,9 @@
     width: 22px; height: 22px; background: #fff; color: var(--accent); border-radius: 50%;
     border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center;
     font-size: 10px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    transition: transform 0.15s, box-shadow 0.15s;
   }
+  .seg-mid-pin.is-active { transform: scale(1.15); box-shadow: 0 0 0 3px rgba(74,91,78,0.35); }
   .map-anno-wrap { display: flex; flex-direction: column; gap: 8px; width: 100%; }
   .map-anno-card {
     background: var(--bg); border-radius: 8px; padding: 10px 12px; font-size: 11px; line-height: 1.45;
@@ -254,28 +256,42 @@
     line-height: 1; display: block;
   }
 
-  .map-day-hint {
-    position: absolute; bottom: 20px; left: 20px; right: 20px; max-width: 420px;
-    background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 12px 14px; z-index: 12; box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-    font-size: 12px; display: none;
+  .map-bottom-strip {
+    position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 22;
+    display: none; gap: 10px; overflow-x: auto; overflow-y: hidden;
+    padding: 10px 12px; scroll-behavior: smooth;
+    background: rgba(253, 251, 247, 0.96); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: 0 -4px 24px rgba(0,0,0,0.1);
+    -webkit-overflow-scrolling: touch;
   }
-  .map-day-hint.active { display: block; }
-  .map-day-hint-title { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
+  .map-bottom-strip.active { display: flex; }
+  .map-bottom-strip::-webkit-scrollbar { height: 5px; }
+  .map-bottom-strip::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
-  .map-node-mini-card {
-    width: 132px; background: #fff; border-radius: 8px; padding: 8px 10px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.14); border: 1px solid var(--border);
-    cursor: pointer; transition: box-shadow 0.15s, transform 0.15s;
+  .map-strip-card {
+    flex: 0 0 auto; width: 168px; aspect-ratio: 4 / 3;
+    background: #fff; border: 2px solid var(--border); border-radius: 10px;
+    padding: 10px 11px; cursor: pointer; transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+    display: flex; flex-direction: column; overflow: hidden;
   }
-  .map-node-mini-card:hover { box-shadow: 0 6px 22px rgba(0,0,0,0.2); transform: translateY(-2px); }
-  .map-node-attraction { border-left: 3px solid #5B4E8A; }
-  .map-node-meal { border-left: 3px solid var(--accent2); }
-  .map-node-stay { border-left: 3px solid var(--accent); background: var(--accent-light); }
-  .mini-type { font-size: 9px; font-weight: 700; color: var(--ink3); letter-spacing: 0.4px; }
-  .mini-title {
-    font-size: 11px; font-weight: 700; color: var(--ink); line-height: 1.35; margin-top: 3px;
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  .map-strip-card:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.1); }
+  .map-strip-card.active {
+    border-color: var(--accent); background: var(--accent-light);
+    box-shadow: 0 0 0 3px rgba(74, 91, 78, 0.25);
+  }
+  .map-strip-card.strip-node { border-left: 4px solid var(--ink); }
+  .map-strip-card.strip-segment { border-left: 4px solid var(--accent); }
+  .map-strip-card.strip-stay { border-left: 4px solid var(--accent2); }
+  .map-strip-card.strip-attraction { border-left: 4px solid #5B4E8A; }
+  .map-strip-card.strip-meal { border-left: 4px solid #E67E22; }
+  .strip-type { font-size: 9px; font-weight: 700; color: var(--ink3); letter-spacing: 0.5px; flex-shrink: 0; }
+  .strip-title {
+    font-size: 13px; font-weight: 700; color: var(--ink); line-height: 1.3; margin: 4px 0;
+    flex-shrink: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .strip-body {
+    font-size: 10px; color: var(--ink2); line-height: 1.45; flex: 1; overflow: hidden;
+    display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;
   }
 
   .map-detail-sheet {
@@ -338,37 +354,7 @@
   }
   .map-nav-tab.loading-tab { opacity: 0.6; pointer-events: none; }
 
-  .map-route-popup {
-    position: absolute; left: 50%; bottom: 20px; z-index: 25;
-    width: min(300px, calc(100vw - 520px));
-    aspect-ratio: 4 / 3;
-    background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
-    box-shadow: 0 12px 40px rgba(0,0,0,0.18);
-    transform: translateX(-50%) translateY(110%);
-    opacity: 0; pointer-events: none;
-    transition: transform 0.28s ease, opacity 0.28s ease;
-    display: flex; flex-direction: column; overflow: hidden;
-  }
-  .map-route-popup.open {
-    transform: translateX(-50%) translateY(0);
-    opacity: 1; pointer-events: all;
-  }
-  .map-route-popup-header {
-    flex-shrink: 0; padding: 10px 12px 8px; border-bottom: 1px solid var(--border2);
-    display: flex; justify-content: space-between; align-items: center;
-  }
-  .map-route-popup-title { font-weight: 700; font-size: 13px; }
-  .map-route-popup-close {
-    background: var(--bg); border: none; width: 26px; height: 26px; border-radius: 6px;
-    cursor: pointer; font-size: 16px; color: var(--ink2); line-height: 1;
-  }
-  .map-route-popup-body {
-    flex: 1; overflow-y: auto; padding: 10px 12px 12px;
-    -webkit-overflow-scrolling: touch;
-  }
-  @media (max-width: 900px) {
-    .map-route-popup { width: min(300px, calc(100vw - 40px)); }
-  }
+  .map-container.has-strip #map { bottom: 158px; }
 </style>
 </head>
 <body>
@@ -439,17 +425,7 @@
       <div class="guide-subtitle">选择左侧方案，地图将同步展示动线</div>
     </div>
     <div class="map-top-navigation-bar" id="map-navigation-bar"></div>
-    <div class="map-route-popup" id="map-route-popup">
-      <div class="map-route-popup-header">
-        <span class="map-route-popup-title" id="map-route-popup-title">节点详情</span>
-        <button class="map-route-popup-close" onclick="closeRoutePopup()" aria-label="关闭">×</button>
-      </div>
-      <div class="map-route-popup-body" id="map-route-popup-body"></div>
-    </div>
-    <div class="map-day-hint" id="map-day-hint">
-      <div class="map-day-hint-title" id="map-day-hint-title"></div>
-      <div id="map-day-hint-body"></div>
-    </div>
+    <div class="map-bottom-strip" id="map-bottom-strip"></div>
     <div class="map-detail-sheet" id="map-detail-sheet">
       <div class="sheet-header">
         <div id="sheet-header-text"></div>
@@ -476,7 +452,8 @@ let dayDetailCache = {};
 let currentMapView = 'overview';
 let dayDetailLoadingDay = null;
 let lastDayDetailError = '';
-let activeRouteNodeIdx = null;
+let activeStripCardId = null;
+let currentStripItems = [];
 
 function escapeHtml(str) {
   return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -510,7 +487,20 @@ function showResultsPage() {
   document.getElementById('page-results').classList.add('active');
 }
 
-function onMapBackgroundClick() { closeRoutePopup(); }
+function onMapBackgroundClick() {
+  activeStripCardId = null;
+  document.querySelectorAll('.map-strip-card').forEach(el => el.classList.remove('active'));
+  markerLayers.forEach(m => {
+    const pin = m.getElement()?.querySelector('.route-node-pin, .seg-mid-pin');
+    if (pin) pin.classList.remove('is-active');
+  });
+}
+
+function mapFitPadding() {
+  return document.querySelector('.map-container')?.classList.contains('has-strip')
+    ? { paddingTopLeft: [24, 24], paddingBottomRight: [24, 172] }
+    : { padding: [28, 28] };
+}
 
 function initSandboxMap() {
   if (map) { map.invalidateSize(); return; }
@@ -523,37 +513,175 @@ function initSandboxMap() {
 function clearMapLayers() {
   markerLayers.forEach(m => m.remove()); markerLayers = [];
   polylineLayers.forEach(p => p.remove()); polylineLayers = [];
-  document.getElementById('map-day-hint')?.classList.remove('active');
-  closeRoutePopup();
+  renderBottomStrip([]);
 }
 
-function closeRoutePopup() {
-  activeRouteNodeIdx = null;
-  document.getElementById('map-route-popup')?.classList.remove('open');
+function renderBottomStrip(items) {
+  currentStripItems = items;
+  const strip = document.getElementById('map-bottom-strip');
+  const container = document.querySelector('.map-container');
+  if (!items.length) {
+    strip.classList.remove('active');
+    strip.innerHTML = '';
+    container?.classList.remove('has-strip');
+    activeStripCardId = null;
+    return;
+  }
+  strip.classList.add('active');
+  container?.classList.add('has-strip');
+  strip.innerHTML = items.map(item => `
+    <div class="map-strip-card ${item.stripClass}${item.id === activeStripCardId ? ' active' : ''}"
+         data-card-id="${escapeHtml(item.id)}">
+      <div class="strip-type">${escapeHtml(item.typeLabel)}</div>
+      <div class="strip-title">${escapeHtml(item.title)}</div>
+      <div class="strip-body">${escapeHtml(item.body)}</div>
+    </div>
+  `).join('');
+  strip.querySelectorAll('.map-strip-card').forEach(el => {
+    el.addEventListener('click', () => onStripCardClick(el.dataset.cardId));
+  });
+  if (activeStripCardId && items.some(i => i.id === activeStripCardId)) {
+    scrollStripCardIntoView(activeStripCardId);
+  } else if (items[0]) {
+    highlightStripCard(items[0].id, false);
+  }
+  setTimeout(() => map?.invalidateSize(), 0);
+}
+
+function scrollStripCardIntoView(cardId) {
+  const el = document.querySelector(`.map-strip-card[data-card-id="${cardId}"]`);
+  if (el) el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+}
+
+function highlightStripCard(cardId, panMap = true) {
+  activeStripCardId = cardId;
+  document.querySelectorAll('.map-strip-card').forEach(el => {
+    el.classList.toggle('active', el.dataset.cardId === cardId);
+  });
+  scrollStripCardIntoView(cardId);
+  markerLayers.forEach(m => {
+    if (m._stripCardId != null) {
+      const pin = m.getElement()?.querySelector('.route-node-pin, .seg-mid-pin');
+      if (pin) pin.classList.toggle('is-active', m._stripCardId === cardId);
+    }
+  });
+  if (panMap) {
+    const item = currentStripItems.find(i => i.id === cardId);
+    if (item?.latlng && map) map.panTo(item.latlng, { animate: true });
+  }
+}
+
+function onStripCardClick(cardId) {
+  highlightStripCard(cardId, true);
+  const item = currentStripItems.find(i => i.id === cardId);
+  if (item?.onDetail) item.onDetail();
+}
+
+function createMapPin(latlng, html, stripCardId, zIndex = 800) {
+  const m = L.marker(latlng, {
+    icon: L.divIcon({ className: 'map-label-icon', html, iconSize: [30, 30], iconAnchor: [15, 15] }),
+    zIndexOffset: zIndex,
+  });
+  m._stripCardId = stripCardId;
+  m.on('click', (e) => {
+    L.DomEvent.stopPropagation(e);
+    highlightStripCard(stripCardId, false);
+  });
+  addMapLayer(m);
+  return m;
+}
+
+function buildOverviewStripItems(data) {
+  const items = [];
+  const nodes = data.nodes || [];
+  nodes.forEach((n, idx) => {
+    const acc = getAccForNode(n, data.accommodation, idx);
+    const outbound = data.roundtrip?.outbound;
+    const ret = data.roundtrip?.return;
+    const startCity = lastSearchPayload.start_point || '';
+    let bodyParts = [];
+    if (idx === 0 && outbound?.method) {
+      bodyParts.push(`✈️ ${startCity && !outbound.method.includes(startCity) ? startCity + '→' + n.city : outbound.method}`);
+    }
+    if (acc || n.nights) bodyParts.push(`🏨 ${n.nights}晚 ${acc?.price_range || ''}`);
+    if (idx === nodes.length - 1 && ret?.method) bodyParts.push(`↩️ ${ret.method}`);
+    items.push({
+      id: `node-${idx}`,
+      stripClass: 'strip-node',
+      typeLabel: `节点 ${idx + 1}`,
+      title: n.city,
+      body: bodyParts.join(' · ') || n.core_value || '',
+      latlng: n.latlng,
+      onDetail: () => {
+        const html = buildNodeAnnotationHtml(n, idx, data);
+        showRoutePopup(`${idx + 1}. ${n.city}`, html);
+      },
+    });
+    if (idx < nodes.length - 1) {
+      const seg = getSegmentBetween(n.city, nodes[idx + 1].city, data.segment_transport);
+      items.push({
+        id: `seg-${idx}`,
+        stripClass: 'strip-segment',
+        typeLabel: '城际转场',
+        title: `${n.city} → ${nodes[idx + 1].city}`,
+        body: seg ? `${seg.method}${seg.self_drive_rec ? ' · 自驾' : ''}` : '接驳中',
+        latlng: null,
+        onDetail: () => seg && showRoutePopup(`🚗 ${seg.from} → ${seg.to}`, buildSegmentAnnotationHtml(seg)),
+      });
+    }
+  });
+  return items;
 }
 
 function showRoutePopup(title, html) {
-  document.getElementById('map-route-popup-title').textContent = title;
-  document.getElementById('map-route-popup-body').innerHTML = html;
-  document.getElementById('map-route-popup').classList.add('open');
+  document.getElementById('sheet-header-text').innerHTML = `<span style="font-weight:700">${escapeHtml(title)}</span>`;
+  document.getElementById('sheet-body').innerHTML = html;
+  document.getElementById('map-detail-sheet').classList.add('open');
 }
 
-function openRouteNodePopup(idx, data) {
-  activeRouteNodeIdx = idx;
-  const node = data.nodes[idx];
-  const html = buildNodeAnnotationHtml(node, idx, data);
-  showRoutePopup(`${idx + 1}. ${node.city}`, html || `<p style="font-size:12px">暂无详情</p>`);
-  markerLayers.forEach(m => {
-    if (m._routeNodeIdx != null) {
-      const el = m.getElement()?.querySelector('.route-node-pin');
-      if (el) el.classList.toggle('is-active', m._routeNodeIdx === idx);
-    }
+function buildDayStripItems(day, dayNum) {
+  const items = [];
+  if (day.day_start?.latlng) {
+    items.push({
+      id: 'stay',
+      stripClass: 'strip-stay',
+      typeLabel: '住宿起点',
+      title: day.day_start.name,
+      body: `${day.day_start.type} · ${day.day_start.price_range}`,
+      latlng: day.day_start.latlng,
+      onDetail: () => openStayDetail(day.day_start, dayNum),
+    });
+  }
+  (day.attractions || []).forEach((a, i) => {
+    items.push({
+      id: `attr-${i}`,
+      stripClass: 'strip-attraction',
+      typeLabel: '景点',
+      title: a.name,
+      body: `${a.ticket_type === 'paid' ? '付费 ' + a.price : '免费'} · ${a.hours}`,
+      latlng: a.latlng,
+      onDetail: () => openAttractionDetail(a),
+    });
   });
-}
-
-function openRouteSegmentPopup(seg) {
-  activeRouteNodeIdx = null;
-  showRoutePopup(`🚗 ${seg.from} → ${seg.to}`, buildSegmentAnnotationHtml(seg));
+  [
+    { key: 'breakfast', label: '早餐' },
+    { key: 'lunch', label: '午餐' },
+    { key: 'dinner', label: '晚餐' },
+  ].forEach(({ key, label }) => {
+    const slot = day.meals?.[key];
+    if (!slot?.anchor_latlng) return;
+    const top = slot.restaurants?.[0];
+    items.push({
+      id: `meal-${key}`,
+      stripClass: 'strip-meal',
+      typeLabel: label,
+      title: slot.area || top?.name || label,
+      body: top ? `★${top.rating} ${top.cuisine} · ${top.price_per_person}` : '推荐美食区',
+      latlng: slot.anchor_latlng,
+      onDetail: () => openMealDetail({ ...slot, slotKey: key }, dayNum),
+    });
+  });
+  return items;
 }
 
 function closeDetailSheet() {
@@ -629,21 +757,6 @@ function buildMapDayTabs(isLoading = false) {
   bar.innerHTML = html;
 }
 
-function createMiniCardMarker(latlng, nodeType, typeLabel, title, onClick) {
-  const typeClass = nodeType === 'meal' ? 'map-node-meal' : nodeType === 'stay' ? 'map-node-stay' : 'map-node-attraction';
-  const m = L.marker(latlng, {
-    icon: L.divIcon({
-      className: 'map-label-icon',
-      html: `<div class="map-node-mini-card ${typeClass}"><div class="mini-type">${escapeHtml(typeLabel)}</div><div class="mini-title">${escapeHtml(title)}</div></div>`,
-      iconAnchor: [66, 52],
-    }),
-    zIndexOffset: nodeType === 'stay' ? 850 : 800,
-  });
-  m.on('click', (e) => { L.DomEvent.stopPropagation(e); onClick(); });
-  addMapLayer(m);
-  return m;
-}
-
 function openAttractionDetail(attraction) {
   const sheet = document.getElementById('map-detail-sheet');
   const isPaid = attraction.ticket_type === 'paid';
@@ -709,38 +822,49 @@ function openMealDetail(mealSlot, dayNum) {
 }
 
 async function renderDayDetailMap(dayNum) {
-  const hint = document.getElementById('map-day-hint');
-  hint.classList.add('active');
-  document.getElementById('map-day-hint-title').textContent = `第${dayNum}天`;
-  document.getElementById('map-day-hint-body').textContent = '加载中…';
+  renderBottomStrip([{
+    id: 'loading',
+    stripClass: 'strip-node',
+    typeLabel: '加载中',
+    title: `第${dayNum}天`,
+    body: '正在获取当日行程…',
+  }]);
 
   const day = await ensureDayLoaded(dayNum);
   if (!day) {
-    document.getElementById('map-day-hint-body').textContent = lastDayDetailError || '暂无数据';
+    renderBottomStrip([{
+      id: 'error',
+      stripClass: 'strip-node',
+      typeLabel: '提示',
+      title: `第${dayNum}天`,
+      body: lastDayDetailError || '暂无数据',
+    }]);
     return;
   }
 
   closeDetailSheet();
-  hint.classList.add('active');
-  const densityLabel = { high: '高密度', medium: '中密度', low: '低密度' }[day.route_density] || '';
-  document.getElementById('map-day-hint-title').textContent = `第${dayNum}天 · ${day.city}${densityLabel ? ' · ' + densityLabel : ''}`;
-  document.getElementById('map-day-hint-body').textContent =
-    (day.sub_route_chain ? `动线：${day.sub_route_chain}。` : '') + (day.sub_route_summary || '');
-
+  const items = buildDayStripItems(day, dayNum);
   const points = [];
   const routeLine = [];
+  let pinNum = 1;
 
   if (day.day_start?.latlng) {
     points.push(day.day_start.latlng);
     routeLine.push(day.day_start.latlng);
-    createMiniCardMarker(day.day_start.latlng, 'stay', '住宿起点', day.day_start.name, () => openStayDetail(day.day_start, dayNum));
+    createMapPin(
+      day.day_start.latlng,
+      `<div class="route-node-pin is-first">${pinNum++}</div>`,
+      'stay',
+      900,
+    );
   }
 
-  (day.attractions || []).forEach((a) => {
+  (day.attractions || []).forEach((a, i) => {
     if (!a.latlng) return;
     points.push(a.latlng);
     routeLine.push(a.latlng);
-    createMiniCardMarker(a.latlng, 'attraction', '景点', a.name, () => openAttractionDetail(a));
+    const pinClass = i === (day.attractions.length - 1) && !day.meals ? ' is-last' : '';
+    createMapPin(a.latlng, `<div class="route-node-pin${pinClass}">${pinNum++}</div>`, `attr-${i}`, 850);
   });
 
   if (routeLine.length > 1) {
@@ -753,21 +877,24 @@ async function renderDayDetailMap(dayNum) {
     }
   }
 
-  const mealSlots = [
-    { key: 'breakfast', label: '早餐' },
-    { key: 'lunch', label: '午餐' },
-    { key: 'dinner', label: '晚餐' },
-  ];
-  mealSlots.forEach(({ key, label }) => {
+  [
+    { key: 'breakfast', label: '早' },
+    { key: 'lunch', label: '午' },
+    { key: 'dinner', label: '晚' },
+  ].forEach(({ key, label }) => {
     const slot = day.meals?.[key];
     if (!slot?.anchor_latlng) return;
     points.push(slot.anchor_latlng);
-    const mealTitle = slot.area || slot.restaurants?.[0]?.name || label;
-    const mealData = { ...slot, slotKey: key };
-    createMiniCardMarker(slot.anchor_latlng, 'meal', label, mealTitle, () => openMealDetail(mealData, dayNum));
+    createMapPin(
+      slot.anchor_latlng,
+      `<div class="seg-mid-pin" style="font-size:11px">${label}</div>`,
+      `meal-${key}`,
+      700,
+    );
   });
 
-  if (points.length) map.fitBounds(L.latLngBounds(points).pad(0.28));
+  renderBottomStrip(items);
+  if (points.length) map.fitBounds(L.latLngBounds(points).pad(0.22), mapFitPadding());
 }
 
 function generateGeodesicLinePoints(fromArr, toArr, curveOffset) {
@@ -1020,27 +1147,13 @@ function renderIntegratedRouteOverview(data) {
   if (!data.nodes?.length) return;
   const geoPoints = [];
   const nCount = data.nodes.length;
+  const stripItems = buildOverviewStripItems(data);
 
   data.nodes.forEach((n, idx) => {
     if (!n.latlng) return;
     geoPoints.push(n.latlng);
-
-    const pinClass = idx === 0 ? 'is-first' : idx === nCount - 1 ? 'is-last' : '';
-    const m = L.marker(n.latlng, {
-      icon: L.divIcon({
-        className: 'map-label-icon',
-        html: `<div class="route-node-pin ${pinClass}">${idx + 1}</div>`,
-        iconSize: [30, 30],
-        iconAnchor: [15, 15],
-      }),
-      zIndexOffset: 900,
-    });
-    m._routeNodeIdx = idx;
-    m.on('click', (e) => {
-      L.DomEvent.stopPropagation(e);
-      openRouteNodePopup(idx, data);
-    });
-    addMapLayer(m);
+    const pinClass = idx === 0 ? ' is-first' : idx === nCount - 1 ? ' is-last' : '';
+    createMapPin(n.latlng, `<div class="route-node-pin${pinClass}">${idx + 1}</div>`, `node-${idx}`, 900);
   });
 
   for (let i = 0; i < geoPoints.length - 1; i++) {
@@ -1050,27 +1163,17 @@ function renderIntegratedRouteOverview(data) {
     addPolylineWithFlow(curve);
 
     const seg = getSegmentBetween(fromNode.city, toNode.city, data.segment_transport);
+    const midIdx = Math.floor(curve.length / 2);
+    const mid = curve[midIdx];
+    const segItem = stripItems.find(s => s.id === `seg-${i}`);
+    if (segItem) segItem.latlng = mid;
     if (seg) {
-      const midIdx = Math.floor(curve.length / 2);
-      const mid = curve[midIdx];
-      const sm = L.marker(mid, {
-        icon: L.divIcon({
-          className: 'map-label-icon',
-          html: '<div class="seg-mid-pin">↔</div>',
-          iconSize: [22, 22],
-          iconAnchor: [11, 11],
-        }),
-        zIndexOffset: 600,
-      });
-      sm.on('click', (e) => {
-        L.DomEvent.stopPropagation(e);
-        openRouteSegmentPopup(seg);
-      });
-      addMapLayer(sm);
+      createMapPin(mid, '<div class="seg-mid-pin">↔</div>', `seg-${i}`, 600);
     }
   }
 
-  if (geoPoints.length) map.fitBounds(L.latLngBounds(geoPoints).pad(0.35));
+  renderBottomStrip(stripItems);
+  if (geoPoints.length) map.fitBounds(L.latLngBounds(geoPoints).pad(0.35), mapFitPadding());
 }
 
 function switchMapSandboxView(viewType) {
