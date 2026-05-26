@@ -205,6 +205,34 @@
   }
   .loading-overlay.active { opacity: 1; pointer-events: all; }
   .loading-title { font-size: 20px; font-weight: 500; color: var(--ink); margin-top: 16px; }
+
+  /* 地图融合动线标注 */
+  .map-label-icon { background: transparent !important; border: none !important; }
+  .route-node-pin {
+    width: 30px; height: 30px; background: var(--ink); color: #fff; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px;
+    border: 2.5px solid #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+  }
+  .route-node-pin.is-first { background: var(--accent2); }
+  .route-node-pin.is-last { background: var(--accent); }
+  .map-anno-wrap { display: flex; flex-direction: column; gap: 5px; }
+  .map-anno-card {
+    background: #fff; border-radius: 8px; padding: 7px 9px; font-size: 10px; line-height: 1.4;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.14); border: 1px solid var(--border); max-width: 175px;
+    white-space: normal;
+  }
+  .map-anno-card .anno-title { font-weight: 700; font-size: 10px; color: var(--ink); margin-bottom: 2px; }
+  .map-anno-card .anno-meta { color: var(--ink2); font-size: 9px; }
+  .map-anno-flight { border-left: 3px solid #3B82F6; }
+  .map-anno-stay { border-left: 3px solid var(--accent2); }
+  .map-anno-segment {
+    border-left: 3px solid var(--accent); text-align: center;
+    background: rgba(74,91,78,0.06);
+  }
+  .map-flow-arrow {
+    color: var(--accent); font-size: 20px; font-weight: 700; text-shadow: 0 0 3px #fff;
+    line-height: 1; display: block;
+  }
 </style>
 </head>
 <body>
@@ -275,7 +303,7 @@
       <div class="guide-subtitle">选择左侧方案，地图将同步展示动线</div>
     </div>
     <div class="map-top-navigation-bar" id="map-navigation-bar">
-      <div class="map-nav-tab active" id="tab-geo-overview" onclick="switchMapSandboxView('overview')">📊 宏观大总线动线</div>
+      <div class="map-nav-tab active" id="tab-geo-overview" onclick="switchMapSandboxView('overview')">🗺 动线总览</div>
       <div class="map-nav-tab" id="tab-geo-roundtrip" onclick="switchMapSandboxView('roundtrip')">✈️ 往返大交通</div>
       <div class="map-nav-tab" id="tab-geo-stay" onclick="switchMapSandboxView('stay')">🏨 留宿节点布局</div>
       <div class="map-nav-tab" id="tab-geo-segment" onclick="switchMapSandboxView('segment')">🚗 城际转场流</div>
@@ -291,9 +319,11 @@
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-polylinedecorator@1.6.0/dist/leaflet.polylineDecorator.js"></script>
 <script>
 let map = null, markerLayers = [], polylineLayers = [];
 let planOptions = [], selectedPlanIndex = 0, currentSkillResponse = null;
+let lastSearchPayload = {};
 
 function getPlanHeadline(plan) {
   if (!plan) return '推荐路线';
@@ -373,6 +403,7 @@ async function executeRoutePlannerSkill() {
   document.getElementById('loading-overlay').classList.add('active');
 
   try {
+    lastSearchPayload = payload;
     const res = await fetch('/api/plan_options', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -447,6 +478,174 @@ function selectPlan(idx) {
   if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
+function normCity(name) {
+  return (name || '').replace(/市|县|区|自治州/g, '').trim();
+}
+
+function cityMatch(a, b) {
+  const na = normCity(a), nb = normCity(b);
+  return na && nb && (na.includes(nb) || nb.includes(na));
+}
+
+function getAccForNode(node, accList, idx) {
+  if (!accList?.length) return null;
+  return accList.find(a => cityMatch(a.location, node.city)) || accList[idx] || null;
+}
+
+function getSegmentBetween(fromCity, toCity, segments) {
+  return (segments || []).find(s => cityMatch(s.from, fromCity) && cityMatch(s.to, toCity));
+}
+
+function offsetLatLng(latlng, latOff, lngOff) {
+  return [latlng[0] + latOff, latlng[1] + lngOff];
+}
+
+function curveBearing(p1, p2) {
+  const lat1 = p1[0] * Math.PI / 180, lat2 = p2[0] * Math.PI / 180;
+  const dLng = (p2[1] - p1[1]) * Math.PI / 180;
+  const y = Math.sin(dLng) * Math.cos(lat2);
+  const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+  return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+}
+
+function addMapLayer(layer) {
+  layer.addTo(map);
+  if (layer instanceof L.Marker) markerLayers.push(layer);
+  else polylineLayers.push(layer);
+}
+
+function createLabelMarker(latlng, html, iconAnchor = [0, 0]) {
+  const m = L.marker(latlng, {
+    icon: L.divIcon({ className: 'map-label-icon', html, iconAnchor }),
+    zIndexOffset: 500,
+  });
+  addMapLayer(m);
+  return m;
+}
+
+function buildNodeAnnotationHtml(node, idx, data) {
+  const parts = [];
+  const outbound = data.roundtrip?.outbound;
+  const ret = data.roundtrip?.return;
+  const acc = getAccForNode(node, data.accommodation, idx);
+  const startCity = lastSearchPayload.start_point || '';
+
+  if (idx === 0 && outbound?.method) {
+    const arriveHint = startCity && !outbound.method.includes(startCity)
+      ? `${startCity} → ${node.city}` : outbound.method;
+    parts.push(`
+      <div class="map-anno-card map-anno-flight">
+        <div class="anno-title">✈️ 抵达 · 去程</div>
+        <div>${arriveHint}</div>
+        <div class="anno-meta">${outbound.duration || ''} ${outbound.price_ref ? '· ' + outbound.price_ref : ''}</div>
+      </div>`);
+  }
+
+  if (acc || node.nights) {
+    parts.push(`
+      <div class="map-anno-card map-anno-stay">
+        <div class="anno-title">🏨 留宿 · ${node.city}</div>
+        <div>${acc ? `${acc.nights_label || ''} ${node.nights}晚 · ${acc.type || ''}` : `${node.nights} 晚`}</div>
+        <div class="anno-meta">${acc?.price_range || ''}${acc?.location && !cityMatch(acc.location, node.city) ? ' · ' + acc.location : ''}</div>
+      </div>`);
+  }
+
+  if (idx === (data.nodes?.length || 0) - 1 && ret?.method) {
+    parts.push(`
+      <div class="map-anno-card map-anno-flight">
+        <div class="anno-title">↩️ 返程</div>
+        <div>${ret.method}</div>
+        <div class="anno-meta">${ret.duration || ''} ${ret.price_ref ? '· ' + ret.price_ref : ''}</div>
+      </div>`);
+  }
+
+  return parts.length ? `<div class="map-anno-wrap">${parts.join('')}</div>` : '';
+}
+
+function buildSegmentAnnotationHtml(seg) {
+  if (!seg) return '';
+  return `
+    <div class="map-anno-wrap">
+      <div class="map-anno-card map-anno-segment">
+        <div class="anno-title">🚗 ${seg.from} → ${seg.to}</div>
+        <div>${seg.method || '城际接驳'}${seg.self_drive_rec ? ' · 推荐自驾' : ''}</div>
+        <div class="anno-meta">${seg.reason ? seg.reason.slice(0, 36) + (seg.reason.length > 36 ? '…' : '') : ''}</div>
+      </div>
+    </div>`;
+}
+
+function addFlowArrowsOnCurve(curvePoints) {
+  const ratios = [0.35, 0.62, 0.88];
+  ratios.forEach((ratio, i) => {
+    const idx = Math.min(Math.floor(curvePoints.length * ratio), curvePoints.length - 2);
+    const p1 = curvePoints[idx], p2 = curvePoints[idx + 1];
+    if (!p1 || !p2) return;
+    const mid = [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2];
+    const angle = curveBearing(p1, p2);
+    createLabelMarker(mid, `<span class="map-flow-arrow" style="transform:rotate(${angle - 90}deg)">▶</span>`, [10, 10]);
+  });
+}
+
+function addPolylineWithFlow(curvePoints) {
+  const line = L.polyline(curvePoints, { color: '#4A5B4E', weight: 5, opacity: 0.88, lineCap: 'round', lineJoin: 'round' });
+  addMapLayer(line);
+
+  if (typeof L.polylineDecorator === 'function') {
+    const decorator = L.polylineDecorator(line, {
+      patterns: [{
+        offset: '12%',
+        repeat: '28%',
+        symbol: L.Symbol.arrowHead({
+          pixelSize: 11,
+          headAngle: 40,
+          polygon: false,
+          pathOptions: { stroke: true, weight: 3, color: '#4A5B4E', opacity: 0.95 },
+        }),
+      }],
+    });
+    addMapLayer(decorator);
+  } else {
+    addFlowArrowsOnCurve(curvePoints);
+  }
+}
+
+function renderIntegratedRouteOverview(data) {
+  if (!data.nodes?.length) return;
+  const geoPoints = [];
+  const nCount = data.nodes.length;
+
+  data.nodes.forEach((n, idx) => {
+    if (!n.latlng) return;
+    geoPoints.push(n.latlng);
+
+    const pinClass = idx === 0 ? 'is-first' : idx === nCount - 1 ? 'is-last' : '';
+    createLabelMarker(n.latlng, `<div class="route-node-pin ${pinClass}">${idx + 1}</div>`, [15, 15]);
+
+    const annoHtml = buildNodeAnnotationHtml(n, idx, data);
+    if (annoHtml) {
+      const side = idx % 2 === 0 ? 1 : -1;
+      const labelPos = offsetLatLng(n.latlng, 0.12 * side, 0.18 * side);
+      createLabelMarker(labelPos, annoHtml, [side > 0 ? 0 : 175, 0]);
+    }
+  });
+
+  for (let i = 0; i < geoPoints.length - 1; i++) {
+    const fromNode = data.nodes[i];
+    const toNode = data.nodes[i + 1];
+    const curve = generateGeodesicLinePoints(geoPoints[i], geoPoints[i + 1], 0.12);
+    addPolylineWithFlow(curve);
+
+    const seg = getSegmentBetween(fromNode.city, toNode.city, data.segment_transport);
+    const midIdx = Math.floor(curve.length / 2);
+    const mid = curve[midIdx];
+    const perp = offsetLatLng(mid, -0.06, 0.06);
+    const segHtml = buildSegmentAnnotationHtml(seg);
+    if (segHtml) createLabelMarker(perp, segHtml, [88, 20]);
+  }
+
+  if (geoPoints.length) map.fitBounds(L.latLngBounds(geoPoints).pad(0.35));
+}
+
 function switchMapSandboxView(viewType) {
   document.querySelectorAll('.map-nav-tab').forEach(t => t.classList.remove('active'));
   clearMapLayers();
@@ -456,23 +655,7 @@ function switchMapSandboxView(viewType) {
 
   if (viewType === 'overview') {
     document.getElementById('tab-geo-overview').classList.add('active');
-    if (data.nodes?.length) {
-      const geoPoints = [];
-      data.nodes.forEach((n, idx) => {
-        if (!n.latlng) return;
-        const m = L.marker(n.latlng, {
-          icon: L.divIcon({ className: 'macro-clean-circle', html: `${idx + 1}`, iconSize: [22, 22] }),
-        }).addTo(map);
-        m.bindTooltip(`<b>${idx + 1}. ${n.city}</b>`, { permanent: true, direction: 'top' });
-        markerLayers.push(m);
-        geoPoints.push(n.latlng);
-      });
-      for (let i = 0; i < geoPoints.length - 1; i++) {
-        const curve = generateGeodesicLinePoints(geoPoints[i], geoPoints[i + 1], 0.1);
-        polylineLayers.push(L.polyline(curve, { color: '#4A5B4E', weight: 4, opacity: 0.8 }).addTo(map));
-      }
-      if (geoPoints.length) map.fitBounds(L.latLngBounds(geoPoints).pad(0.3));
-    }
+    renderIntegratedRouteOverview(data);
   } else if (viewType === 'roundtrip') {
     document.getElementById('tab-geo-roundtrip').classList.add('active');
     pane.classList.add('active');

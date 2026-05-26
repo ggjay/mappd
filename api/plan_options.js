@@ -145,6 +145,11 @@ ${transportConstraint}
 规则5 · 密度推断：按天数与人数合理推断节点数量
 规则6 · 预算：舒适型标准估算
 
+规则7 · 地图融合标注（用于动线总览一页展示）
+- nodes[].city 必须与 segment_transport 的 from/to 首尾相接、名称一致（可含「市」字）
+- accommodation.location 必须包含对应 nodes 中的城市名，nights_label 与节点顺序一致
+- roundtrip.outbound.method 须写清【${start_point}】到首站城市的交通方式与耗时；return 须写清末站返回交通
+
 # 输出格式
 严格只输出一个合法 JSON 对象，不要 Markdown 标记。
 **每个 options 数组元素都必须完整包含 headline 字段（禁止省略、禁止为 null）。**
