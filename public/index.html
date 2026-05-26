@@ -174,13 +174,26 @@
   .map-container { position: relative; background: #E8E2D5; height: 100vh; }
   #map { width: 100%; height: 100%; position: absolute; inset: 0; z-index: 1; background: #E8E2D5; }
   .map-top-navigation-bar {
-    position: absolute; top: 20px; left: 20px; right: 20px;
-    background: #fff; border: 1px solid var(--border); padding: 6px;
+    position: absolute; top: 16px; left: 16px; right: 16px;
+    background: #fff; border: 1px solid var(--border); padding: 8px 10px;
     border-radius: var(--radius); z-index: 10; box-shadow: 0 8px 24px rgba(0,0,0,0.06);
-    display: none; gap: 6px; overflow-x: auto;
+    display: none;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
   }
   .map-top-navigation-bar.active { display: flex; }
-  .map-nav-tab { padding: 8px 16px; font-size: 12px; font-weight: 600; color: var(--ink2); border-radius: 6px; cursor: pointer; white-space: nowrap; transition: all 0.2s; background: var(--bg); }
+  .map-top-navigation-bar::-webkit-scrollbar { height: 4px; }
+  .map-nav-tab {
+    flex: 0 0 auto;
+    padding: 8px 14px; font-size: 12px; font-weight: 600; color: var(--ink2);
+    border-radius: 6px; cursor: pointer; white-space: nowrap; transition: all 0.2s;
+    background: var(--bg); border: none; font-family: inherit;
+  }
   .map-nav-tab.active { background: var(--ink); color: #fff; }
   .map-floating-micro-pane {
     position: absolute; top: 85px; right: 20px; width: 350px; max-height: calc(100vh - 170px);
@@ -215,11 +228,18 @@
   }
   .route-node-pin.is-first { background: var(--accent2); }
   .route-node-pin.is-last { background: var(--accent); }
-  .map-anno-wrap { display: flex; flex-direction: column; gap: 5px; }
+  .route-node-pin { cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; }
+  .route-node-pin.is-active { transform: scale(1.12); box-shadow: 0 0 0 3px rgba(74,91,78,0.35); }
+  .seg-mid-pin {
+    width: 22px; height: 22px; background: #fff; color: var(--accent); border-radius: 50%;
+    border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+  .map-anno-wrap { display: flex; flex-direction: column; gap: 8px; width: 100%; }
   .map-anno-card {
-    background: #fff; border-radius: 8px; padding: 7px 9px; font-size: 10px; line-height: 1.4;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.14); border: 1px solid var(--border); max-width: 175px;
-    white-space: normal;
+    background: var(--bg); border-radius: 8px; padding: 10px 12px; font-size: 11px; line-height: 1.45;
+    border: 1px solid var(--border2); width: 100%; box-sizing: border-box;
+    white-space: normal; word-break: break-word;
   }
   .map-anno-card .anno-title { font-weight: 700; font-size: 10px; color: var(--ink); margin-bottom: 2px; }
   .map-anno-card .anno-meta { color: var(--ink2); font-size: 9px; }
@@ -301,6 +321,38 @@
     font-weight: 700; margin-bottom: 8px;
   }
   .map-nav-tab.loading-tab { opacity: 0.6; pointer-events: none; }
+
+  .map-route-popup {
+    position: absolute; left: 50%; bottom: 20px; z-index: 25;
+    width: min(300px, calc(100vw - 520px));
+    aspect-ratio: 4 / 3;
+    background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+    transform: translateX(-50%) translateY(110%);
+    opacity: 0; pointer-events: none;
+    transition: transform 0.28s ease, opacity 0.28s ease;
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .map-route-popup.open {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1; pointer-events: all;
+  }
+  .map-route-popup-header {
+    flex-shrink: 0; padding: 10px 12px 8px; border-bottom: 1px solid var(--border2);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .map-route-popup-title { font-weight: 700; font-size: 13px; }
+  .map-route-popup-close {
+    background: var(--bg); border: none; width: 26px; height: 26px; border-radius: 6px;
+    cursor: pointer; font-size: 16px; color: var(--ink2); line-height: 1;
+  }
+  .map-route-popup-body {
+    flex: 1; overflow-y: auto; padding: 10px 12px 12px;
+    -webkit-overflow-scrolling: touch;
+  }
+  @media (max-width: 900px) {
+    .map-route-popup { width: min(300px, calc(100vw - 40px)); }
+  }
 </style>
 </head>
 <body>
@@ -370,9 +422,13 @@
       <div class="guide-title">Mappd</div>
       <div class="guide-subtitle">选择左侧方案，地图将同步展示动线</div>
     </div>
-    <div class="map-top-navigation-bar" id="map-navigation-bar">
-      <div class="map-nav-tab active" data-view="overview" onclick="switchMapSandboxView('overview')">🗺 路线总览</div>
-      <div id="map-day-tabs"></div>
+    <div class="map-top-navigation-bar" id="map-navigation-bar"></div>
+    <div class="map-route-popup" id="map-route-popup">
+      <div class="map-route-popup-header">
+        <span class="map-route-popup-title" id="map-route-popup-title">节点详情</span>
+        <button class="map-route-popup-close" onclick="closeRoutePopup()" aria-label="关闭">×</button>
+      </div>
+      <div class="map-route-popup-body" id="map-route-popup-body"></div>
     </div>
     <div class="map-day-hint" id="map-day-hint">
       <div class="map-day-hint-title" id="map-day-hint-title"></div>
@@ -404,6 +460,7 @@ let dayDetailCache = {};
 let currentDayDetails = null;
 let currentMapView = 'overview';
 let dayDetailsLoading = false;
+let activeRouteNodeIdx = null;
 
 function escapeHtml(str) {
   return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -437,17 +494,50 @@ function showResultsPage() {
   document.getElementById('page-results').classList.add('active');
 }
 
+function onMapBackgroundClick() { closeRoutePopup(); }
+
 function initSandboxMap() {
   if (map) { map.invalidateSize(); return; }
   document.getElementById('map-placeholder').style.display = 'none';
   map = L.map('map', { zoomControl: false, attributionControl: false }).setView([25.04, 102.73], 5);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 18 }).addTo(map);
+  map.on('click', onMapBackgroundClick);
 }
 
 function clearMapLayers() {
   markerLayers.forEach(m => m.remove()); markerLayers = [];
   polylineLayers.forEach(p => p.remove()); polylineLayers = [];
   document.getElementById('map-day-hint')?.classList.remove('active');
+  closeRoutePopup();
+}
+
+function closeRoutePopup() {
+  activeRouteNodeIdx = null;
+  document.getElementById('map-route-popup')?.classList.remove('open');
+}
+
+function showRoutePopup(title, html) {
+  document.getElementById('map-route-popup-title').textContent = title;
+  document.getElementById('map-route-popup-body').innerHTML = html;
+  document.getElementById('map-route-popup').classList.add('open');
+}
+
+function openRouteNodePopup(idx, data) {
+  activeRouteNodeIdx = idx;
+  const node = data.nodes[idx];
+  const html = buildNodeAnnotationHtml(node, idx, data);
+  showRoutePopup(`${idx + 1}. ${node.city}`, html || `<p style="font-size:12px">暂无详情</p>`);
+  markerLayers.forEach(m => {
+    if (m._routeNodeIdx != null) {
+      const el = m.getElement()?.querySelector('.route-node-pin');
+      if (el) el.classList.toggle('is-active', m._routeNodeIdx === idx);
+    }
+  });
+}
+
+function openRouteSegmentPopup(seg) {
+  activeRouteNodeIdx = null;
+  showRoutePopup(`🚗 ${seg.from} → ${seg.to}`, buildSegmentAnnotationHtml(seg));
 }
 
 function closeDetailSheet() {
@@ -497,15 +587,16 @@ async function loadDayDetailsForPlan() {
 }
 
 function buildMapDayTabs(isLoading = false) {
-  const container = document.getElementById('map-day-tabs');
+  const bar = document.getElementById('map-navigation-bar');
   const totalDays = parseInt(lastSearchPayload.days, 10) || 7;
-  let html = '';
+  const overviewActive = currentMapView === 'overview' ? ' active' : '';
+  let html = `<button type="button" class="map-nav-tab${overviewActive}" data-view="overview" onclick="switchMapSandboxView('overview')">🗺 路线总览</button>`;
   for (let d = 1; d <= totalDays; d++) {
     const active = currentMapView === `day-${d}` ? ' active' : '';
     const loading = isLoading ? ' loading-tab' : '';
-    html += `<div class="map-nav-tab${active}${loading}" data-view="day-${d}" onclick="switchMapSandboxView('day-${d}')">第${d}天</div>`;
+    html += `<button type="button" class="map-nav-tab${active}${loading}" data-view="day-${d}" onclick="switchMapSandboxView('day-${d}')">第${d}天</button>`;
   }
-  container.innerHTML = html;
+  bar.innerHTML = html;
 }
 
 function openAttractionDetail(attraction) {
@@ -659,6 +750,7 @@ async function executeRoutePlannerSkill() {
     renderPlanDetailCards();
     selectPlan(0);
     initSandboxMap();
+    buildMapDayTabs(true);
     document.getElementById('map-navigation-bar').classList.add('active');
     setTimeout(() => { if (map) map.invalidateSize(); }, 100);
   } catch (e) {
@@ -780,17 +872,17 @@ function buildNodeAnnotationHtml(node, idx, data) {
     parts.push(`
       <div class="map-anno-card map-anno-flight">
         <div class="anno-title">✈️ 抵达 · 去程</div>
-        <div>${arriveHint}</div>
-        <div class="anno-meta">${outbound.duration || ''} ${outbound.price_ref ? '· ' + outbound.price_ref : ''}</div>
+        <div>${escapeHtml(arriveHint)}</div>
+        <div class="anno-meta">${escapeHtml(outbound.duration || '')} ${outbound.price_ref ? '· ' + escapeHtml(outbound.price_ref) : ''}</div>
       </div>`);
   }
 
   if (acc || node.nights) {
     parts.push(`
       <div class="map-anno-card map-anno-stay">
-        <div class="anno-title">🏨 留宿 · ${node.city}</div>
-        <div>${acc ? `${acc.nights_label || ''} ${node.nights}晚 · ${acc.type || ''}` : `${node.nights} 晚`}</div>
-        <div class="anno-meta">${acc?.price_range || ''}${acc?.location && !cityMatch(acc.location, node.city) ? ' · ' + acc.location : ''}</div>
+        <div class="anno-title">🏨 留宿 · ${escapeHtml(node.city)}</div>
+        <div>${acc ? `${escapeHtml(acc.nights_label || '')} ${node.nights}晚 · ${escapeHtml(acc.type || '')}` : `${node.nights} 晚`}</div>
+        <div class="anno-meta">${escapeHtml(acc?.price_range || '')}${acc?.location && !cityMatch(acc.location, node.city) ? ' · ' + escapeHtml(acc.location) : ''}</div>
       </div>`);
   }
 
@@ -798,8 +890,8 @@ function buildNodeAnnotationHtml(node, idx, data) {
     parts.push(`
       <div class="map-anno-card map-anno-flight">
         <div class="anno-title">↩️ 返程</div>
-        <div>${ret.method}</div>
-        <div class="anno-meta">${ret.duration || ''} ${ret.price_ref ? '· ' + ret.price_ref : ''}</div>
+        <div>${escapeHtml(ret.method)}</div>
+        <div class="anno-meta">${escapeHtml(ret.duration || '')} ${ret.price_ref ? '· ' + escapeHtml(ret.price_ref) : ''}</div>
       </div>`);
   }
 
@@ -807,13 +899,13 @@ function buildNodeAnnotationHtml(node, idx, data) {
 }
 
 function buildSegmentAnnotationHtml(seg) {
-  if (!seg) return '';
+  if (!seg) return '<p style="font-size:12px;color:var(--ink2)">暂无转场信息</p>';
   return `
     <div class="map-anno-wrap">
       <div class="map-anno-card map-anno-segment">
-        <div class="anno-title">🚗 ${seg.from} → ${seg.to}</div>
-        <div>${seg.method || '城际接驳'}${seg.self_drive_rec ? ' · 推荐自驾' : ''}</div>
-        <div class="anno-meta">${seg.reason ? seg.reason.slice(0, 36) + (seg.reason.length > 36 ? '…' : '') : ''}</div>
+        <div class="anno-title">🚗 城际转场</div>
+        <div>${escapeHtml(seg.method || '城际接驳')}${seg.self_drive_rec ? ' · 推荐自驾' : ''}</div>
+        <div class="anno-meta">${escapeHtml(seg.reason || '')}</div>
       </div>
     </div>`;
 }
@@ -863,14 +955,21 @@ function renderIntegratedRouteOverview(data) {
     geoPoints.push(n.latlng);
 
     const pinClass = idx === 0 ? 'is-first' : idx === nCount - 1 ? 'is-last' : '';
-    createLabelMarker(n.latlng, `<div class="route-node-pin ${pinClass}">${idx + 1}</div>`, [15, 15]);
-
-    const annoHtml = buildNodeAnnotationHtml(n, idx, data);
-    if (annoHtml) {
-      const side = idx % 2 === 0 ? 1 : -1;
-      const labelPos = offsetLatLng(n.latlng, 0.12 * side, 0.18 * side);
-      createLabelMarker(labelPos, annoHtml, [side > 0 ? 0 : 175, 0]);
-    }
+    const m = L.marker(n.latlng, {
+      icon: L.divIcon({
+        className: 'map-label-icon',
+        html: `<div class="route-node-pin ${pinClass}">${idx + 1}</div>`,
+        iconSize: [30, 30],
+        iconAnchor: [15, 15],
+      }),
+      zIndexOffset: 900,
+    });
+    m._routeNodeIdx = idx;
+    m.on('click', (e) => {
+      L.DomEvent.stopPropagation(e);
+      openRouteNodePopup(idx, data);
+    });
+    addMapLayer(m);
   });
 
   for (let i = 0; i < geoPoints.length - 1; i++) {
@@ -880,11 +979,24 @@ function renderIntegratedRouteOverview(data) {
     addPolylineWithFlow(curve);
 
     const seg = getSegmentBetween(fromNode.city, toNode.city, data.segment_transport);
-    const midIdx = Math.floor(curve.length / 2);
-    const mid = curve[midIdx];
-    const perp = offsetLatLng(mid, -0.06, 0.06);
-    const segHtml = buildSegmentAnnotationHtml(seg);
-    if (segHtml) createLabelMarker(perp, segHtml, [88, 20]);
+    if (seg) {
+      const midIdx = Math.floor(curve.length / 2);
+      const mid = curve[midIdx];
+      const sm = L.marker(mid, {
+        icon: L.divIcon({
+          className: 'map-label-icon',
+          html: '<div class="seg-mid-pin">↔</div>',
+          iconSize: [22, 22],
+          iconAnchor: [11, 11],
+        }),
+        zIndexOffset: 600,
+      });
+      sm.on('click', (e) => {
+        L.DomEvent.stopPropagation(e);
+        openRouteSegmentPopup(seg);
+      });
+      addMapLayer(sm);
+    }
   }
 
   if (geoPoints.length) map.fitBounds(L.latLngBounds(geoPoints).pad(0.35));
