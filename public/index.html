@@ -248,6 +248,18 @@
 let map = null, markerLayers = [], polylineLayers = [];
 let planOptions = [], selectedPlanIndex = 0, currentSkillResponse = null;
 
+function getPlanHeadline(plan) {
+  if (!plan) return '推荐路线';
+  return plan.headline
+    || plan.title
+    || plan.plan_title
+    || (plan.option_label && plan.option_label.includes('·')
+      ? plan.option_label.split('·').slice(1).join('·').trim()
+      : plan.option_label)
+    || plan.route_overview
+    || '推荐路线';
+}
+
 function togglePrefTag(id) { document.getElementById(id).classList.toggle('selected'); }
 function toggleStyleTag(el) { el.classList.toggle('selected'); }
 function getSelectedTravelStyles() {
@@ -343,7 +355,7 @@ function renderPlanOptionCards() {
     <div class="plan-option-card ${idx === selectedPlanIndex ? 'selected' : ''}" onclick="selectPlan(${idx})" data-idx="${idx}">
       <div class="plan-option-check"><i class="ti ti-check"></i></div>
       <div class="option-badge">${plan.option_label || '方案 ' + (idx + 1)}</div>
-      <div class="plan-option-headline">${plan.headline}</div>
+      <div class="plan-option-headline">${getPlanHeadline(plan)}</div>
       ${plan.diff_highlight ? `<div class="plan-option-diff">${plan.diff_highlight}</div>` : ''}
       <div class="plan-option-meta">
         <span>${plan.route_overview || ''}</span>
@@ -379,7 +391,7 @@ function renderLeftManifest(data) {
 
   container.innerHTML = `
     <div class="plan-manifest-card">
-      <div class="manifest-headline">${data.headline}</div>
+      <div class="manifest-headline">${getPlanHeadline(data)}</div>
       <div class="tag-capsule-container">${tags}</div>
       <div class="section-subtitle"><i class="ti ti-git-branch"></i> 决策取舍逻辑</div>
       <div class="logic-callout-box">${data.planning_logic}</div>

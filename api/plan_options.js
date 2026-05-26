@@ -16,6 +16,48 @@ const PLAN_SCHEMA = `{
     "peak_season_alert": "仅国庆/五一/暑假旺季时输出，否则为空字符串"
   }`;
 
+function extractOptions(parsed) {
+  if (Array.isArray(parsed.options)) return parsed.options;
+  if (Array.isArray(parsed.plans)) return parsed.plans;
+  if (parsed.options && typeof parsed.options === 'object') {
+    return Object.values(parsed.options);
+  }
+  if (parsed.plan_a && parsed.plan_b) return [parsed.plan_a, parsed.plan_b];
+  if (parsed.planA && parsed.planB) return [parsed.planA, parsed.planB];
+  return [];
+}
+
+function normalizePlan(raw, index) {
+  const plan = typeof raw === 'object' && raw !== null ? { ...raw } : {};
+  const label = plan.option_label || `方案 ${String.fromCharCode(65 + index)}`;
+
+  plan.option_label = label;
+  plan.headline =
+    plan.headline ||
+    plan.title ||
+    plan.plan_title ||
+    plan.name ||
+    (label.includes('·') ? label.split('·').slice(1).join('·').trim() : '') ||
+    plan.route_overview ||
+    `推荐路线 ${index + 1}`;
+
+  plan.diff_highlight = plan.diff_highlight || plan.diff || '';
+  plan.experience_tags = Array.isArray(plan.experience_tags) ? plan.experience_tags : [];
+  plan.nodes = Array.isArray(plan.nodes) ? plan.nodes : [];
+  plan.route_overview = plan.route_overview || '';
+  plan.planning_logic = plan.planning_logic || '';
+  plan.roundtrip = plan.roundtrip || { outbound: {}, return: {} };
+  plan.accommodation = Array.isArray(plan.accommodation) ? plan.accommodation : [];
+  plan.segment_transport = Array.isArray(plan.segment_transport) ? plan.segment_transport : [];
+  plan.cost_estimate = plan.cost_estimate || {
+    transport: 0, accommodation: 0, food: 0, attraction: 0,
+    total_per_person: '—', note: '以上为参考估算，实际以预订价格为准',
+  };
+  plan.peak_season_alert = plan.peak_season_alert || '';
+
+  return plan;
+}
+
 const FALLBACK_PLAN = {
   option_label: "方案 · 自校准",
   diff_highlight: "数据对齐中",
@@ -104,7 +146,8 @@ ${transportConstraint}
 规则6 · 预算：舒适型标准估算
 
 # 输出格式
-严格只输出一个合法 JSON 对象，不要 Markdown 标记：
+严格只输出一个合法 JSON 对象，不要 Markdown 标记。
+**每个 options 数组元素都必须完整包含 headline 字段（禁止省略、禁止为 null）。**
 {
   "options": [
     ${PLAN_SCHEMA},
@@ -130,21 +173,22 @@ ${transportConstraint}
     }
 
     const parsed = JSON.parse(resultText.trim());
-    let options = parsed.options || parsed.plans || [];
-    if (!Array.isArray(options)) options = [options];
+    let options = extractOptions(parsed);
 
     // 兼容旧版单方案响应
     if (options.length === 0 && parsed.headline) {
-      options = [{ option_label: '推荐方案', diff_highlight: '', ...parsed }];
+      options = [parsed];
     }
 
-    options = options.slice(0, 2).map((opt, i) => ({
-      ...opt,
-      option_label: opt.option_label || `方案 ${i + 1}`,
-    }));
+    options = options.slice(0, 2).map((opt, i) => normalizePlan(opt, i));
 
     if (options.length === 1) {
-      options.push({ ...options[0], option_label: '方案 2', diff_highlight: '备选动线（与方案1形成对比）' });
+      const alt = normalizePlan({ ...options[0], option_label: '方案 B' }, 1);
+      alt.headline = alt.headline === options[0].headline
+        ? `${alt.headline}（备选）`
+        : alt.headline;
+      alt.diff_highlight = alt.diff_highlight || '备选动线，与方案 A 形成对比';
+      options.push(alt);
     }
 
     return res.status(200).json({ options });
